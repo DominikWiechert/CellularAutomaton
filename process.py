@@ -13,13 +13,15 @@ def calculate_probability():
     if os.path.isfile("config.yaml"):
         with open("config.yaml", 'r') as file:
             config = yaml.safe_load(file)
+        log("Probability config loaded")
     else:
         config = {
             "probability": 30
         }
         with open("config.yaml", 'w') as file:
             yaml.dump(config, file,default_flow_style=False)
-
+        log("Probability config not existing")
+        log("Standard probability config file created")
     probability = config["probability"]
 
     log("Probability calculated")

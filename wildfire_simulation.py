@@ -11,6 +11,7 @@ t_max = 20
 tick_speed = 0.1 #[s]
 window, canvas = init_gui()
 prob = calculate_probability()
+
 ## -- Create Test Map - to be removed later --
 for row in range(len(forest_map)):
     for col in range(len(forest_map[0])):
@@ -18,14 +19,12 @@ for row in range(len(forest_map)):
 
 
 forest_map[2][1].status = NodeStatus.BURNING
-#print_map_2_console(forest_map)
 #----------------------------------------------
 
 
 for t in range(t_max):
     log("Step: " + str(t))
-    #time.sleep(tick_speed)
-    #print_map_2_console(forest_map)
+    time.sleep(tick_speed)
     forest_map = run_simulation_step(forest_map,prob)
     visualize_fire(forest_map,window,canvas)
 
