@@ -16,7 +16,9 @@ def calculate_probability():
         log("Probability config loaded")
     else:
         config = {
-            "probability": 30
+            "probability": 30,
+            "wind_speed_x": -2,
+            "wind_speed_y": -1
         }
         with open("config.yaml", 'w') as file:
             yaml.dump(config, file,default_flow_style=False)
