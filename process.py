@@ -15,24 +15,31 @@ def calculate_probability():
 
 def run_simulation_step(forest_map: List[List[MapNode]]) -> List[List[MapNode]]:
     prob = calculate_probability()
-
+    forest_map_temp = forest_map.copy()
     for k in range(len(forest_map)):
         for l in range(len(forest_map[0])):
             if forest_map[k][l].status == NodeStatus.BURNING:
+                #-- Spread due to closeness --
                 if k != 0:
                     if forest_map[k - 1][l].status == NodeStatus.INTACT and random.randint(1, prob) == 1:
-                        forest_map[k - 1][l].status = NodeStatus.BURNING
+                        forest_map_temp[k - 1][l].status = NodeStatus.BURNING
                 if l != 0:
                     if forest_map[k][l - 1].status == NodeStatus.INTACT and random.randint(1, prob) == 1:
-                        forest_map[k][l - 1].status = NodeStatus.BURNING
+                        forest_map_temp[k][l - 1].status = NodeStatus.BURNING
                 if k != len(forest_map) - 1:
                     if forest_map[k + 1][l].status == NodeStatus.INTACT and random.randint(1, prob) == 1:
-                        forest_map[k + 1][l].status = NodeStatus.BURNING
+                        forest_map_temp[k + 1][l].status = NodeStatus.BURNING
                 if l != len(forest_map[0]) - 1:
                     if forest_map[k][l + 1].status == NodeStatus.INTACT and random.randint(1, prob) == 1:
-                        forest_map[k][l + 1].status = NodeStatus.BURNING
+                        forest_map_temp[k][l + 1].status = NodeStatus.BURNING
 
-    return forest_map
+                #-- Burning down --
+                if forest_map[k][l].burning_duration >= 5:
+                    forest_map_temp[k][l].status = NodeStatus.BURNT_DOWN
+                else:
+                    forest_map_temp[k][l].burning_duration += 1
+
+    return forest_map_temp
 
 def print_map_2_console(forest_map: List[List[MapNode]]) -> None:
     for k in range(len(forest_map)):

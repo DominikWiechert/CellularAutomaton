@@ -5,28 +5,27 @@ from custom_datatypes import NodeStatus
 import time
 
 # Feel free to edit the structure :)
-forest_map = get_forest_map()
+forest_map = get_forest_map(grid_height=30,grid_width=30)
 
-t_max = 5
-tick_speed = 1 #[s]
+t_max = 20
+tick_speed = 0.25 #[s]
 window, canvas = init_gui()
 
 ## -- Create Test Map - to be removed later --
 for row in range(len(forest_map)):
     for col in range(len(forest_map[0])):
-        print(row,col)
         forest_map[row][col].status = NodeStatus.INTACT
 
 
 forest_map[2][1].status = NodeStatus.BURNING
-print_map_2_console(forest_map)
+#print_map_2_console(forest_map)
 #----------------------------------------------
 
 
 for t in range(t_max):
     log("Step: " + str(t))
-    time.sleep(tick_speed)
-    print_map_2_console(forest_map)
+   # time.sleep(tick_speed)
+  #  print_map_2_console(forest_map)
 
     forest_map = run_simulation_step(forest_map)
     visualize_fire(forest_map,window,canvas)
