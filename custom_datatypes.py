@@ -15,3 +15,4 @@ class MapNode:
         self.land_use = land_use
         self.height = height
         self.status = NodeStatus.INTACT
+        self.burning_duration = 0
