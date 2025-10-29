@@ -16,3 +16,11 @@ class MapNode:
         self.height = height
         self.status = NodeStatus.INTACT
         self.burning_duration = 0
+
+class Probability:
+    def __init__(self, base):
+        self.base = base
+        self.north = 0
+        self.south = 0
+        self.east = 0
+        self.west = 0

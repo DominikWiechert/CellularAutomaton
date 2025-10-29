@@ -18,7 +18,7 @@ for row in range(len(forest_map)):
         forest_map[row][col].status = NodeStatus.INTACT
 
 
-forest_map[2][1].status = NodeStatus.BURNING
+forest_map[15][15].status = NodeStatus.BURNING
 #----------------------------------------------
 
 
