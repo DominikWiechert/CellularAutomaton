@@ -8,7 +8,6 @@ def init_gui():
     window.geometry("500x500")
     canvas = Canvas(window, width=500, height=500)
     canvas.pack()
-    window.deiconify()
     log("GUI initialized")
     return window, canvas
 
