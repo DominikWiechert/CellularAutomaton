@@ -22,3 +22,5 @@ def visualize_fire(forest_map: List[List[MapNode]], window, canvas) -> None:
                 canvas.create_rectangle(i * mb, j * mh, (i * mb) + 100, (j * mh) + 100, fill="red")
             elif forest_map[i][j].status == NodeStatus.BURNT_DOWN:
                 canvas.create_rectangle(i * mb, j * mh, (i * mb) + 100, (j * mh) + 100, fill="black")
+            elif forest_map[i][j].status == NodeStatus.CANNOT_BURN:
+                canvas.create_rectangle(i * mb, j * mh, (i * mb) + 100, (j * mh) + 100, fill="grey")

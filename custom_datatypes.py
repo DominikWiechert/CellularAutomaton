@@ -3,6 +3,7 @@ from enum import Enum
 class LandUse(Enum):
     FOREST = 1
     STREET = 2
+    MISC = 3
 
 class NodeStatus(Enum):
     INTACT = 1
@@ -13,8 +14,11 @@ class NodeStatus(Enum):
 class MapNode:
     def __init__(self, land_use: LandUse, height: float):
         self.land_use = land_use
+        if self.land_use == LandUse.FOREST:
+            self.status = NodeStatus.INTACT
+        else:
+            self.status = NodeStatus.CANNOT_BURN
         self.height = height
-        self.status = NodeStatus.INTACT
         self.burning_duration = 0
 
 class Probability:
