@@ -2,3 +2,4 @@ misc.xml
 misc.*
 *.log
 temp/
+.idea/*
