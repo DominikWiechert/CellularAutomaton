@@ -13,7 +13,7 @@ except Exception:
     pass
 
 def run_simulation():
-    forest_map = get_forest_map(map_path=Path().cwd() / 'map_pictures' / 'osm_map.png', max_axis_length=50)
+    forest_map = get_forest_map(map_path=Path().cwd() / 'map_pictures' / 'osm_map.png', max_axis_length=100)
 
     t_max = 20
     tick_speed = 0.1 #[s]
