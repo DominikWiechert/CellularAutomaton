@@ -1,18 +1,9 @@
 from typing import List
 from tkinter import *
 from custom_datatypes import *
-from process import log
 from PIL import ImageGrab, Image
 
-def init_gui():
-    window = Tk()
-    window.geometry("500x500")
-    canvas = Canvas(window, width=500, height=500)
-    canvas.pack()
-    log("GUI initialized")
-    return window, canvas
-
-def visualize_fire(forest_map: List[List[MapNode]], window, canvas) -> None:
+def visualize_fire(forest_map: List[List[MapNode]], canvas) -> None:
     for i in range(len(forest_map)):
         for j in range(len(forest_map[0])):
             mb = 500 / len(forest_map)
@@ -25,6 +16,7 @@ def visualize_fire(forest_map: List[List[MapNode]], window, canvas) -> None:
                 canvas.create_rectangle(i * mb, j * mh, (i * mb) + 100, (j * mh) + 100, fill="black")
             elif forest_map[i][j].status == NodeStatus.CANNOT_BURN:
                 canvas.create_rectangle(i * mb, j * mh, (i * mb) + 100, (j * mh) + 100, fill="grey")
+
 
 def append_frame(canvas, frames):
     canvas.update()
