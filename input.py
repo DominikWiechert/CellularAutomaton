@@ -32,7 +32,7 @@ def get_forest_map(map_path: Path = None, max_axis_length: int = 200) -> List[Li
         grid_width = int(ratio * grid_height)
     input_image = cv2.resize(input_image,(grid_width, grid_height))
     input_image = cv2.cvtColor(input_image, cv2.COLOR_BGR2Luv)
-    forest_color = get_forest_color_LUV()
+    forest_color = get_forest_color_luv()
     [l_forest, u_forest, v_forest] = forest_color[0], forest_color[1], forest_color[2]
 
     output_grid = []
@@ -51,7 +51,7 @@ def get_forest_map(map_path: Path = None, max_axis_length: int = 200) -> List[Li
     return output_grid
 
 
-def get_forest_color_LUV() -> List[int]:
+def get_forest_color_luv() -> List[int]:
     forest_image_path = Path().cwd() / 'map_pictures' / 'only_forest.png'
 
     forest_image = cv2.imread(str(forest_image_path))

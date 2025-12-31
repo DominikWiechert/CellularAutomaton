@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import yaml
+
 from input import get_forest_map
 from output import visualize_fire, append_frame
 from process import run_simulation_step, log, print_map_2_console, calculate_probability
@@ -114,6 +116,21 @@ def run_gui():
     wind_speed_y_entry = tk.Entry(tab2, width=100)
     wind_speed_y_entry.insert(0, '-50')
     wind_speed_y_entry.grid(row=6, column=1, padx=10, pady=10)
+
+    def save_entries_to_config():
+        config_data = {
+            't_max': t_max_entry.get(),
+            'tick_speed': tick_speed_entry.get(),
+            'max_axis_length': max_axis_length_entry.get(),
+            'probability': probability_entry.get(),
+            'wind_speed_x': wind_speed_x_entry.get(),
+            'wind_speed_y': wind_speed_y_entry.get()
+        }
+        with open("config.yaml", 'w') as file:
+            yaml.dump(config_data, file)
+        print('Data saved to config.yaml')
+    save_config_button = tk.Button(tab2, text="Save Config", command=save_entries_to_config)
+    save_config_button.grid(row=8, column=0, padx=10, pady=10)
 
     run_button = tk.Button(tab1, text="Run Simulation",
                            command=lambda: run_simulation(root, canvas, Path(path_entry.get())))
