@@ -16,11 +16,14 @@ try:
 except Exception:
     pass
 
-def run_simulation(root: tk.Tk, canvas: tk.Canvas, map_path: Path):
-    forest_map = get_forest_map(map_path=Path(map_path), max_axis_length=100)
+def run_simulation(root: tk.Tk, canvas: tk.Canvas, config_path: Path):
+    # Hinweis: Parameter stehen jetzt alle in der yaml config path
+    with open(config_path, 'r') as file:
+        config = yaml.safe_load(file)
+    forest_map = get_forest_map(map_path=Path(config['path']), max_axis_length=100)
 
-    t_max = 20
-    tick_speed = 0.1 #[s]
+    t_max = config['t_max']
+    tick_speed = config['tick_speed'] #[s]
 
     prob = calculate_probability()
 
@@ -41,7 +44,6 @@ def run_simulation(root: tk.Tk, canvas: tk.Canvas, map_path: Path):
                    disposal=2)
 
 def run_gui():
-    # TODO: Load and save stuff from config.yaml
     # TODO: Feed values from entries into run_simulation, get_forest_map and other methods
     # TODO: Verify inputs (type, min, max)
 
@@ -61,12 +63,16 @@ def run_gui():
     # Init contents
     canvas = tk.Canvas(tab1, width=500, height=500)
     canvas.pack()
-
+    config_path = Path('config.yaml')
     path_entry_label = tk.Label(tab2, text="Map picture path:")
     path_entry_label.grid(row=0, column=0, padx=10, pady=10)
     path_entry = tk.Entry(tab2, width=100)
     path_entry.grid(row=0, column=1, padx=10, pady=10)
-    path_entry.insert(0, str(Path.cwd() / 'map_pictures' / 'osm_map.png'))
+
+
+    def update_map_visualization():
+        forest_map = get_forest_map(map_path=Path(path_entry.get()), max_axis_length=100)
+        visualize_fire(forest_map, canvas)
 
     def select_file(entry: tk.Entry):
         file_path = tk.filedialog.askopenfilename(
@@ -76,69 +82,97 @@ def run_gui():
         if file_path:
             entry.delete(0, tk.END)
             entry.insert(0, file_path)
-        map = get_forest_map(map_path=Path(entry.get()), max_axis_length=100)
-        visualize_fire(map, canvas)
+        update_map_visualization()
+
     select_file_button = tk.Button(tab2, text="Select File", command=lambda: select_file(path_entry))
     select_file_button.grid(row=0, column=2, padx=10, pady=10)
 
     t_max_label = tk.Label(tab2, text="Simulation Time:")
     t_max_label.grid(row=1, column=0, padx=10, pady=10)
     t_max_entry = tk.Entry(tab2, width=100)
-    t_max_entry.insert(0, '20')
     t_max_entry.grid(row=1, column=1, padx=10, pady=10)
 
     tick_speed_label = tk.Label(tab2, text="Tick speed:")
     tick_speed_label.grid(row=2, column=0, padx=10, pady=10)
     tick_speed_entry = tk.Entry(tab2, width=100)
-    tick_speed_entry.insert(0, '0.1')
     tick_speed_entry.grid(row=2, column=1, padx=10, pady=10)
 
     max_axis_length_label = tk.Label(tab2, text="max_axis_length:")
     max_axis_length_label.grid(row=3, column=0, padx=10, pady=10)
     max_axis_length_entry = tk.Entry(tab2, width=100)
-    max_axis_length_entry.insert(0, '100')
     max_axis_length_entry.grid(row=3, column=1, padx=10, pady=10)
 
     probability_label = tk.Label(tab2, text="probability:")
     probability_label.grid(row=4, column=0, padx=10, pady=10)
     probability_entry = tk.Entry(tab2, width=100)
-    probability_entry.insert(0, '30')
     probability_entry.grid(row=4, column=1, padx=10, pady=10)
 
     wind_speed_x_label = tk.Label(tab2, text="wind_speed_x:")
     wind_speed_x_label.grid(row=5, column=0, padx=10, pady=10)
     wind_speed_x_entry = tk.Entry(tab2, width=100)
-    wind_speed_x_entry.insert(0, '-80')
     wind_speed_x_entry.grid(row=5, column=1, padx=10, pady=10)
 
     wind_speed_y_label = tk.Label(tab2, text="wind_speed_y:")
     wind_speed_y_label.grid(row=6, column=0, padx=10, pady=10)
     wind_speed_y_entry = tk.Entry(tab2, width=100)
-    wind_speed_y_entry.insert(0, '-50')
     wind_speed_y_entry.grid(row=6, column=1, padx=10, pady=10)
+
+    def update_config_values(config_path):
+        with open(config_path, 'r') as file:
+            config = yaml.safe_load(file)
+        path_entry.delete(0, tk.END)
+        path_entry.insert(0, config['path'])
+        t_max_entry.delete(0, tk.END)
+        t_max_entry.insert(0, config['t_max'])
+        tick_speed_entry.delete(0, tk.END)
+        tick_speed_entry.insert(0, config['tick_speed'])
+        max_axis_length_entry.delete(0, tk.END)
+        max_axis_length_entry.insert(0, config['max_axis_length'])
+        probability_entry.delete(0, tk.END)
+        probability_entry.insert(0, config['probability'])
+        wind_speed_x_entry.delete(0, tk.END)
+        wind_speed_x_entry.insert(0, config['wind_speed_x'])
+        wind_speed_y_entry.delete(0, tk.END)
+        wind_speed_y_entry.insert(0, config['wind_speed_y'])
+    update_config_values(config_path)
 
     def save_entries_to_config():
         config_data = {
-            't_max': t_max_entry.get(),
-            'tick_speed': tick_speed_entry.get(),
-            'max_axis_length': max_axis_length_entry.get(),
-            'probability': probability_entry.get(),
-            'wind_speed_x': wind_speed_x_entry.get(),
-            'wind_speed_y': wind_speed_y_entry.get()
+            'path': str(path_entry.get()),
+            't_max': int(t_max_entry.get()),
+            'tick_speed': float(tick_speed_entry.get()),
+            'max_axis_length': float(max_axis_length_entry.get()),
+            'probability': float(probability_entry.get()),
+            'wind_speed_x': float(wind_speed_x_entry.get()),
+            'wind_speed_y': float(wind_speed_y_entry.get())
         }
+        # TODO: Select file path for yaml. Might use asksaveasfile method from tkinter.
         with open("config.yaml", 'w') as file:
             yaml.dump(config_data, file)
         print('Data saved to config.yaml')
-    save_config_button = tk.Button(tab2, text="Save Config", command=save_entries_to_config)
+    save_config_button = tk.Button(tab2, text="Save Config as...", command=save_entries_to_config)
     save_config_button.grid(row=8, column=0, padx=10, pady=10)
 
-    run_button = tk.Button(tab1, text="Run Simulation",
-                           command=lambda: run_simulation(root, canvas, Path(path_entry.get())))
+    def load_config_from_file():
+        file_path = tk.filedialog.askopenfilename(
+            title="Select a file",
+            filetypes=(("YAML Files", "*.yaml"), ("All files", "*.*"))
+        )
+        if file_path:
+            config_path = Path(file_path)
+            update_config_values(config_path)
+            update_map_visualization()
+
+    load_config_button = tk.Button(tab2, text="Load Config", command=load_config_from_file)
+    load_config_button.grid(row=9, column=0, padx=10, pady=10)
+
+    def run_button_behaviour():
+        save_entries_to_config()
+        run_simulation(root, canvas, config_path)
+    run_button = tk.Button(tab1, text="Run Simulation", command=run_button_behaviour)
     run_button.pack()
 
-    forest_map = get_forest_map(map_path=Path(path_entry.get()), max_axis_length=100)
-    visualize_fire(forest_map, canvas)
-
+    update_map_visualization()
     log("GUI initialized")
     root.mainloop()
 
