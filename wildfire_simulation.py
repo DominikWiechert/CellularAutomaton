@@ -40,14 +40,13 @@ def run_simulation(root: tk.Tk, canvas: tk.Canvas, map_path: Path):
 
 def run_gui():
     # TODO: Load and save stuff from config.yaml
-    # TODO: Layout!!!!
     # TODO: Feed values from entries into run_simulation, get_forest_map and other methods
     # TODO: Verify inputs (type, min, max)
 
     # Init root window
     root = tk.Tk()
     root.title("Wildfire Simulation")
-    root.geometry("500x600")
+    root.geometry("1000x600")
 
     # Init tabs
     notebook = ttk.Notebook(root)
@@ -61,9 +60,11 @@ def run_gui():
     canvas = tk.Canvas(tab1, width=500, height=500)
     canvas.pack()
 
+    path_entry_label = tk.Label(tab2, text="Map picture path:")
+    path_entry_label.grid(row=0, column=0, padx=10, pady=10)
     path_entry = tk.Entry(tab2, width=100)
+    path_entry.grid(row=0, column=1, padx=10, pady=10)
     path_entry.insert(0, str(Path.cwd() / 'map_pictures' / 'osm_map.png'))
-    path_entry.pack()
 
     def select_file(entry: tk.Entry):
         file_path = tk.filedialog.askopenfilename(
@@ -76,50 +77,50 @@ def run_gui():
         map = get_forest_map(map_path=Path(entry.get()), max_axis_length=100)
         visualize_fire(map, canvas)
     select_file_button = tk.Button(tab2, text="Select File", command=lambda: select_file(path_entry))
-    select_file_button.pack()
+    select_file_button.grid(row=0, column=2, padx=10, pady=10)
+
+    t_max_label = tk.Label(tab2, text="Simulation Time:")
+    t_max_label.grid(row=1, column=0, padx=10, pady=10)
+    t_max_entry = tk.Entry(tab2, width=100)
+    t_max_entry.insert(0, '20')
+    t_max_entry.grid(row=1, column=1, padx=10, pady=10)
+
+    tick_speed_label = tk.Label(tab2, text="Tick speed:")
+    tick_speed_label.grid(row=2, column=0, padx=10, pady=10)
+    tick_speed_entry = tk.Entry(tab2, width=100)
+    tick_speed_entry.insert(0, '0.1')
+    tick_speed_entry.grid(row=2, column=1, padx=10, pady=10)
+
+    max_axis_length_label = tk.Label(tab2, text="max_axis_length:")
+    max_axis_length_label.grid(row=3, column=0, padx=10, pady=10)
+    max_axis_length_entry = tk.Entry(tab2, width=100)
+    max_axis_length_entry.insert(0, '100')
+    max_axis_length_entry.grid(row=3, column=1, padx=10, pady=10)
+
+    probability_label = tk.Label(tab2, text="probability:")
+    probability_label.grid(row=4, column=0, padx=10, pady=10)
+    probability_entry = tk.Entry(tab2, width=100)
+    probability_entry.insert(0, '30')
+    probability_entry.grid(row=4, column=1, padx=10, pady=10)
+
+    wind_speed_x_label = tk.Label(tab2, text="wind_speed_x:")
+    wind_speed_x_label.grid(row=5, column=0, padx=10, pady=10)
+    wind_speed_x_entry = tk.Entry(tab2, width=100)
+    wind_speed_x_entry.insert(0, '-80')
+    wind_speed_x_entry.grid(row=5, column=1, padx=10, pady=10)
+
+    wind_speed_y_label = tk.Label(tab2, text="wind_speed_y:")
+    wind_speed_y_label.grid(row=6, column=0, padx=10, pady=10)
+    wind_speed_y_entry = tk.Entry(tab2, width=100)
+    wind_speed_y_entry.insert(0, '-50')
+    wind_speed_y_entry.grid(row=6, column=1, padx=10, pady=10)
 
     run_button = tk.Button(tab1, text="Run Simulation",
-                       command=lambda: run_simulation(root, canvas, Path(path_entry.get())))
+                           command=lambda: run_simulation(root, canvas, Path(path_entry.get())))
     run_button.pack()
 
     forest_map = get_forest_map(map_path=Path(path_entry.get()), max_axis_length=100)
     visualize_fire(forest_map, canvas)
-
-    t_max_label = tk.Label(tab2, text="Simulation Time:")
-    t_max_label.pack()
-    t_max_entry = tk.Entry(tab2, width=100)
-    t_max_entry.insert(0, '20')
-    t_max_entry.pack()
-
-    tick_speed_label = tk.Label(tab2, text="Tick speed:")
-    tick_speed_label.pack()
-    tick_speed_entry = tk.Entry(tab2, width=100)
-    tick_speed_entry.insert(0, '0.1')
-    tick_speed_entry.pack()
-
-    max_axis_length_label = tk.Label(tab2, text="max_axis_length:")
-    max_axis_length_label.pack()
-    max_axis_length_entry = tk.Entry(tab2, width=100)
-    max_axis_length_entry.insert(0, '100')
-    max_axis_length_entry.pack()
-
-    probability_label = tk.Label(tab2, text="probability:")
-    probability_label.pack()
-    probability_entry = tk.Entry(tab2, width=100)
-    probability_entry.insert(0, '30')
-    probability_entry.pack()
-
-    wind_speed_x_label = tk.Label(tab2, text="wind_speed_x:")
-    wind_speed_x_label.pack()
-    wind_speed_x_entry = tk.Entry(tab2, width=100)
-    wind_speed_x_entry.insert(0, '-80')
-    wind_speed_x_entry.pack()
-
-    wind_speed_y_label = tk.Label(tab2, text="wind_speed_y:")
-    wind_speed_y_label.pack()
-    wind_speed_y_entry = tk.Entry(tab2, width=100)
-    wind_speed_y_entry.insert(0, '-50')
-    wind_speed_y_entry.pack()
 
     log("GUI initialized")
     root.mainloop()
