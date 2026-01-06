@@ -1,0 +1,2 @@
+Kriging Example:
+https://geostat-framework.readthedocs.io/projects/pykrige/en/stable/examples/00_ordinary.html
