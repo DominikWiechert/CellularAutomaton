@@ -3,6 +3,7 @@ import random
 import yaml
 import os.path
 from custom_datatypes import MapNode, NodeStatus, Probability
+import numpy as np
 
 
 def log(msg):
@@ -71,3 +72,19 @@ def print_map_2_console(forest_map: List[List[MapNode]]) -> None:
     for k in range(len(forest_map)):
         for l in range(len(forest_map[0])):
             print(forest_map[k][l].status)
+
+
+def simplify_forest_map(forest_map: List[List[MapNode]]) -> List[List[str]]:
+    simplified_forest_map  = [["cyan" for x in range(len(forest_map[0]))] for y in range(len(forest_map))] #cyan indicates error
+    for i in range(len(forest_map)):
+        for j in range(len(forest_map[0])):
+            if forest_map[i][j].status == NodeStatus.INTACT:
+                simplified_forest_map[i][j] = "green"
+            elif forest_map[i][j].status == NodeStatus.BURNING:
+                simplified_forest_map[i][j] = "red"
+            elif forest_map[i][j].status == NodeStatus.BURNT_DOWN:
+                simplified_forest_map[i][j] = "black"
+            elif forest_map[i][j].status == NodeStatus.CANNOT_BURN:
+                simplified_forest_map[i][j] = "grey"
+
+    return simplified_forest_map

@@ -1,20 +1,35 @@
 from pathlib import Path
 
 import yaml
+from fsspec.asyn import running_async
 
 from input import get_forest_map
-from output import visualize_fire, append_frame
-from process import run_simulation_step, log, print_map_2_console, calculate_probability
+from output import visualize_fire, append_frame, simplified_visualize_fire
+from process import run_simulation_step, log, print_map_2_console, calculate_probability, simplify_forest_map
 from custom_datatypes import NodeStatus
 import time
 from ctypes import windll
 import tkinter as tk
-from tkinter import filedialog, ttk
+from tkinter import filedialog, ttk,messagebox
+#import sv_ttk
+from matplotlib import pyplot as plt
+
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
+                                               NavigationToolbar2Tk)
+import numpy as np
 
 try:
     windll.shcore.SetProcessDpiAwareness(1)
 except Exception:
     pass
+
+#global varables
+fm = 0
+current_step = 0
+t_max = 0
+playing = False
+###################
 
 def run_simulation(root: tk.Tk, canvas: tk.Canvas, config_path: Path):
     # Hinweis: Parameter stehen jetzt alle in der yaml config path
@@ -48,31 +63,24 @@ def run_gui():
     # TODO: Verify inputs (type, min, max)
 
     # Init root window
+    log("Init pre-processing GUI...")
     root = tk.Tk()
-    root.title("Wildfire Simulation")
-    root.geometry("1000x600")
-
-    # Init tabs
-    notebook = ttk.Notebook(root)
-    tab1 = ttk.Frame(notebook)
-    tab2 = ttk.Frame(notebook)
-    notebook.add(tab1, text="Simulation")
-    notebook.add(tab2, text="Settings")
-    notebook.pack(expand=1, fill='both')
+    root.title("Wildfire Simulation - Pre-Processing")
+    root.geometry("1800x800")
 
     # Init contents
-    canvas = tk.Canvas(tab1, width=500, height=500)
-    canvas.pack()
-    config_path = Path('config.yaml')
-    path_entry_label = tk.Label(tab2, text="Map picture path:")
-    path_entry_label.grid(row=0, column=0, padx=10, pady=10)
-    path_entry = tk.Entry(tab2, width=100)
-    path_entry.grid(row=0, column=1, padx=10, pady=10)
+    #canvas = tk.Canvas(tab1, width=1000, height=1000)
+    #canvas.pack(fill= "both", expand=1)
 
+    config_path = Path('config.yaml')
+    path_entry_label = tk.Label(root, text="Map picture path:")
+    path_entry_label.grid(row=0, column=0, padx=10, pady=10)
+    path_entry = tk.Entry(root, width=100)
+    path_entry.grid(row=0, column=1,columnspan=2, padx=10, pady=10)
 
     def update_map_visualization():
         forest_map = get_forest_map(map_path=Path(path_entry.get()), max_axis_length=100)
-        visualize_fire(forest_map, canvas)
+      #  visualize_fire(forest_map, canvas)
 
     def select_file(entry: tk.Entry):
         file_path = tk.filedialog.askopenfilename(
@@ -84,38 +92,38 @@ def run_gui():
             entry.insert(0, file_path)
         update_map_visualization()
 
-    select_file_button = tk.Button(tab2, text="Select File", command=lambda: select_file(path_entry))
-    select_file_button.grid(row=0, column=2, padx=10, pady=10)
+    select_file_button = tk.Button(root, text="Select File", command=lambda: select_file(path_entry))
+    select_file_button.grid(row=0, column=3, padx=10, pady=10)
 
-    t_max_label = tk.Label(tab2, text="Simulation Time:")
+    t_max_label = tk.Label(root, text="Simulation Time:")
     t_max_label.grid(row=1, column=0, padx=10, pady=10)
-    t_max_entry = tk.Entry(tab2, width=100)
-    t_max_entry.grid(row=1, column=1, padx=10, pady=10)
+    t_max_entry = tk.Entry(root, width=100)
+    t_max_entry.grid(row=1, column=1,columnspan=3,sticky="we", padx=10, pady=10)
 
-    tick_speed_label = tk.Label(tab2, text="Tick speed:")
+    tick_speed_label = tk.Label(root, text="Tick speed:")
     tick_speed_label.grid(row=2, column=0, padx=10, pady=10)
-    tick_speed_entry = tk.Entry(tab2, width=100)
-    tick_speed_entry.grid(row=2, column=1, padx=10, pady=10)
+    tick_speed_entry = tk.Entry(root, width=100)
+    tick_speed_entry.grid(row=2, column=1,columnspan=3,sticky="we", padx=10, pady=10)
 
-    max_axis_length_label = tk.Label(tab2, text="max_axis_length:")
+    max_axis_length_label = tk.Label(root, text="max_axis_length:")
     max_axis_length_label.grid(row=3, column=0, padx=10, pady=10)
-    max_axis_length_entry = tk.Entry(tab2, width=100)
-    max_axis_length_entry.grid(row=3, column=1, padx=10, pady=10)
+    max_axis_length_entry = tk.Entry(root, width=100)
+    max_axis_length_entry.grid(row=3, column=1,columnspan=3,sticky="we", padx=10, pady=10)
 
-    probability_label = tk.Label(tab2, text="probability:")
+    probability_label = tk.Label(root, text="probability:")
     probability_label.grid(row=4, column=0, padx=10, pady=10)
-    probability_entry = tk.Entry(tab2, width=100)
-    probability_entry.grid(row=4, column=1, padx=10, pady=10)
+    probability_entry = tk.Entry(root, width=100)
+    probability_entry.grid(row=4, column=1,columnspan=3,sticky="we", padx=10, pady=10)
 
-    wind_speed_x_label = tk.Label(tab2, text="wind_speed_x:")
+    wind_speed_x_label = tk.Label(root, text="wind_speed_x:")
     wind_speed_x_label.grid(row=5, column=0, padx=10, pady=10)
-    wind_speed_x_entry = tk.Entry(tab2, width=100)
-    wind_speed_x_entry.grid(row=5, column=1, padx=10, pady=10)
+    wind_speed_x_entry = tk.Entry(root, width=100)
+    wind_speed_x_entry.grid(row=5, column=1,columnspan=3,sticky="we", padx=10, pady=10)
 
-    wind_speed_y_label = tk.Label(tab2, text="wind_speed_y:")
+    wind_speed_y_label = tk.Label(root, text="wind_speed_y:")
     wind_speed_y_label.grid(row=6, column=0, padx=10, pady=10)
-    wind_speed_y_entry = tk.Entry(tab2, width=100)
-    wind_speed_y_entry.grid(row=6, column=1, padx=10, pady=10)
+    wind_speed_y_entry = tk.Entry(root, width=100)
+    wind_speed_y_entry.grid(row=6, column=1,columnspan=3,sticky="we", padx=10, pady=10)
 
     def update_config_values(config_path):
         with open(config_path, 'r') as file:
@@ -150,7 +158,7 @@ def run_gui():
         with open("config.yaml", 'w') as file:
             yaml.dump(config_data, file)
         print('Data saved to config.yaml')
-    save_config_button = tk.Button(tab2, text="Save Config as...", command=save_entries_to_config)
+    save_config_button = tk.Button(root, text="Save Config as...", command=save_entries_to_config)
     save_config_button.grid(row=8, column=0, padx=10, pady=10)
 
     def load_config_from_file():
@@ -163,16 +171,184 @@ def run_gui():
             update_config_values(config_path)
             update_map_visualization()
 
-    load_config_button = tk.Button(tab2, text="Load Config", command=load_config_from_file)
-    load_config_button.grid(row=9, column=0, padx=10, pady=10)
+    def run_calculation():
+        #TODO: calculate -> only save needed var and delete the others -> change to new window
+        with open(config_path, 'r') as file:
+            config = yaml.safe_load(file)
+        forest_map = get_forest_map(map_path=Path(config['path']), max_axis_length=100)
+        global t_max
+        t_max = config['t_max']
+        tick_speed = config['tick_speed']  # [s]
 
-    def run_button_behaviour():
-        save_entries_to_config()
-        run_simulation(root, canvas, config_path)
-    run_button = tk.Button(tab1, text="Run Simulation", command=run_button_behaviour)
-    run_button.pack()
+        prob = calculate_probability()
 
-    update_map_visualization()
+        forest_map[15][15].status = NodeStatus.BURNING
+
+        precent_step = t_max / 50
+        progress = 0
+
+        #simplified_forest_matrix = [[["blue" for z in range(t_max)] for y in range(len(forest_map[0]))] for x in range(len(forest_map))]
+        simplified_forest_matrix = np.empty([len(forest_map), len(forest_map[0]),t_max], dtype="S10")
+        global fm
+        fm = np.empty([len(forest_map), len(forest_map[0]),t_max], dtype="S10")
+
+        for t in range(t_max):
+            log("Step: " + str(t))
+            time.sleep(tick_speed)
+            forest_map = run_simulation_step(forest_map, prob)
+            simplified_forest_matrix[:,:,t] = simplify_forest_map(forest_map)
+            fm[:, :, t] = simplify_forest_map(forest_map)
+         #   visualize_fire(forest_map, canvas)
+         #   append_frame(canvas, frames)
+            progress += precent_step
+            pbar.step(progress)
+            root.update_idletasks()
+            root.update()
+
+        #    run_simulation(root, canvas, config_path)
+
+        log("Simulation end")
+        messagebox.showinfo("Calculation Results", "Calculation completed.")
+
+        pbar_label.grid_forget()
+        probability_label.grid_forget()
+        wind_speed_x_label.grid_forget()
+        t_max_label.grid_forget()
+        tick_speed_label.grid_forget()
+        max_axis_length_label.grid_forget()
+        path_entry_label.grid_forget()
+        wind_speed_y_label.grid_forget()
+
+        path_entry.grid_forget()
+        t_max_entry.grid_forget()
+        tick_speed_entry.grid_forget()
+        max_axis_length_entry.grid_forget()
+        probability_entry.grid_forget()
+        wind_speed_x_entry.grid_forget()
+        wind_speed_y_entry.grid_forget()
+
+        pbar.grid_forget()
+        select_file_button.grid_forget()
+        save_config_button.grid_forget()
+        load_config_button.grid_forget()
+        calculate_button.grid_forget()
+        load_post_pros_button.grid_forget()
+
+        #load post ops gui
+        root.title("Wildfire - Post-processing")
+        root.geometry("2000x1200")
+        #canvas_automat = tk.Canvas(root, width=730, height=730 )
+
+        canvas_automat.grid(row=0, column=0, columnspan=20)
+        slider_label.grid(row=1, column=0, sticky='w')
+        slider.grid(row=1, column=1, columnspan=19, sticky='we')
+
+        b1.grid(row=2, column=8)
+        b2.grid(row=2, column=9)
+        b3.grid(row=2, column=10)
+        b4.grid(row=2, column=11)
+        b5.grid(row=2, column=12)
+
+        canvas_plot.get_tk_widget().grid(row=0, column=21, columnspan=10, sticky='e')
+
+        b6.grid(row=2, column=24)
+        b7.grid(row=2, column=25)
+        b8.grid(row=2, column=26)
+        plot()
+        simplified_visualize_fire(simplified_forest_matrix[:,:,0],canvas_automat)
+        return simplified_forest_matrix
+
+    def load_post_pros():
+        #TODO: tbi
+        print("platzhalter")
+
+    load_config_button = tk.Button(root, text="Load Config", command=load_config_from_file)
+    load_config_button.grid(row=8, column=1, padx=10, pady=10)
+    calculate_button = tk.Button(root, text="Run calculation", command=run_calculation)
+    calculate_button.grid(row=8, column=2, padx=10, pady=10)
+    load_post_pros_button = tk.Button(root, text="Load calculation", command=load_post_pros)
+    load_post_pros_button.grid(row=8, column=3, padx=10, pady=10)
+
+    pbar_label = tk.Label(root, text="Progress:")
+    pbar_label.grid(row=9, column=0, padx=10, pady=10)
+    pbar = ttk.Progressbar(root, orient="horizontal",length=100,mode='determinate')
+    pbar.grid(row=9, column=1, sticky="we",columnspan=3,padx=10, pady=10)
+
+    #Init Post process gui
+
+
+    def plot():
+        x = np.random.randint(0, 10, 10)
+        y = np.random.randint(0, 10, 10)
+        ax.scatter(x, y)
+        canvas_plot.draw()
+
+
+    def next_button():
+        global current_step
+        current_step = current_step+  1
+        print(current_step)
+        simplified_visualize_fire(fm[:,:,current_step],canvas_automat)
+
+    def previous_button():
+        global current_step
+        if current_step >=1:
+            current_step = current_step - 1
+        else:
+            log("First step reached")
+        simplified_visualize_fire(fm[:,:,current_step],canvas_automat)
+
+    def first_button():
+        global current_step
+        current_step = 0
+        print(current_step)
+        simplified_visualize_fire(fm[:,:,current_step],canvas_automat)
+
+    def last_button():
+        global current_step
+        current_step = t_max-1
+        print(current_step)
+        simplified_visualize_fire(fm[:,:,current_step],canvas_automat)
+
+    def play_button():
+        global current_step, playing
+        if playing == True:
+            playing = False
+            b3.config(text="▶")
+
+        else:
+            playing = True
+            b3.config(text="⏸")
+            for stp in range(current_step,t_max):
+                current_step = stp
+                simplified_visualize_fire(fm[:, :, current_step], canvas_automat)
+                root.after(500)
+
+
+    #TODO: Limiterung von indize einbauen
+
+    fig, ax = plt.subplots()
+
+    canvas_automat = tk.Canvas(root, width=730, height=730, bg="red")
+    slider_label = ttk.Label(root, text="Tick duration [s]")
+    slider = ttk.Scale(root, from_=1, to=1000, orient='horizontal')
+    b1 = ttk.Button(root, text="⏮", command=first_button)
+    b2 = ttk.Button(root, text="<", command=previous_button)
+    b3 = ttk.Button(root, text="▶", command=play_button)
+    b4 = ttk.Button(root, text=">",command=next_button)
+    b5 = ttk.Button(root, text="⏭",command=last_button)
+
+    canvas_plot = FigureCanvasTkAgg(fig, master=root)
+
+
+    b6 = ttk.Button(root, text="Save")
+    b7 = ttk.Button(root, text="Load")
+    b8 = ttk.Button(root, text="New Simulation")
+
+
+    #update_map_visualization()
+    #TODO: Add style
+    #sv_ttk.set_theme("dark")
     log("GUI initialized")
     root.mainloop()
 
