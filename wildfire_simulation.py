@@ -29,6 +29,7 @@ fm = 0
 current_step = 0
 t_max = 0
 playing = False
+tick_speed = 500
 ###################
 
 def run_simulation(root: tk.Tk, canvas: tk.Canvas, config_path: Path):
@@ -178,6 +179,7 @@ def run_gui():
         forest_map = get_forest_map(map_path=Path(config['path']), max_axis_length=100)
         global t_max
         t_max = config['t_max']
+        global tick_speed
         tick_speed = config['tick_speed']  # [s]
 
         prob = calculate_probability()
@@ -286,7 +288,10 @@ def run_gui():
 
     def next_button():
         global current_step
-        current_step = current_step+  1
+        if current_step == t_max -1:
+            log("Last step reached")
+        else:
+            current_step = current_step+  1
         print(current_step)
         simplified_visualize_fire(fm[:,:,current_step],canvas_automat)
 
@@ -315,23 +320,34 @@ def run_gui():
         if playing == True:
             playing = False
             b3.config(text="▶")
-
         else:
             playing = True
             b3.config(text="⏸")
-            for stp in range(current_step,t_max):
-                current_step = stp
+            run_animation()
+
+    def run_animation():
+        global current_step,playing,tick_speed
+        if playing == True:
+            if current_step == t_max-1:
+                playing = False
+                b3.config(text="▶")
+            else:
+                current_step = current_step + 1
+                print(current_step)
                 simplified_visualize_fire(fm[:, :, current_step], canvas_automat)
-                root.after(500)
+                root.after(int(tick_speed), lambda: run_animation())
 
 
-    #TODO: Limiterung von indize einbauen
+    def slider_changed(event):
+        global tick_speed
+        slider_label.config(text = f'tick speed = {int(slider.get()):04} ms')
+        tick_speed = int(slider.get())
 
     fig, ax = plt.subplots()
 
     canvas_automat = tk.Canvas(root, width=730, height=730, bg="red")
-    slider_label = ttk.Label(root, text="Tick duration [s]")
-    slider = ttk.Scale(root, from_=1, to=1000, orient='horizontal')
+    slider_label = ttk.Label(root, text = f'tick speed = {int(tick_speed):04} ms')
+    slider = ttk.Scale(root, from_=1, to=1000,value=500, orient='horizontal', command=slider_changed)
     b1 = ttk.Button(root, text="⏮", command=first_button)
     b2 = ttk.Button(root, text="<", command=previous_button)
     b3 = ttk.Button(root, text="▶", command=play_button)
