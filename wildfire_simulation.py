@@ -11,7 +11,7 @@ import time
 from ctypes import windll
 import tkinter as tk
 from tkinter import filedialog, ttk,messagebox
-#import sv_ttk
+import sv_ttk
 from matplotlib import pyplot as plt
 
 from matplotlib.figure import Figure
@@ -153,10 +153,10 @@ def run_gui():
         t_max = config['t_max']
         global tick_speed
         tick_speed = config['tick_speed']  # [s]
-
+        print(tick_speed)
         prob = calculate_probability()
 
-        forest_map[15][15].status = NodeStatus.BURNING
+        forest_map[25][30].status = NodeStatus.BURNING
 
         precent_step = 50 / t_max
 
@@ -170,7 +170,6 @@ def run_gui():
         for t in range(1,t_max+1):
             log("Step: " + str(t))
             prog_label.config(text=f"Simulating {t}/{t_max}")
-            time.sleep(tick_speed)
             forest_map = run_simulation_step(forest_map, prob)
             fm[:, :, t] = simplify_forest_map(forest_map)
             timeline[0,t] = t
@@ -223,15 +222,17 @@ def run_gui():
         load_config_button.grid_forget()
         calculate_button.grid_forget()
         load_post_pros_button.grid_forget()
+        prog_label.grid_forget()
 
         #load post ops gui
         root.title("Wildfire - Post-processing")
         root.geometry("2000x1200")
-        #canvas_automat = tk.Canvas(root, width=730, height=730 )
 
         canvas_automat.grid(row=0, column=0, columnspan=20)
         slider_label.grid(row=1, column=0, sticky='w')
         slider.grid(row=1, column=1, columnspan=19, sticky='we')
+        slider.config(value=tick_speed)
+        slider_label.config(text=f'tick speed = {int(slider.get()):04} ms')
 
         b1.grid(row=2, column=8)
         b2.grid(row=2, column=9)
@@ -241,9 +242,9 @@ def run_gui():
 
         canvas_plot.get_tk_widget().grid(row=0, column=21, columnspan=10, sticky='e')
 
-        b6.grid(row=2, column=24)
-        b7.grid(row=2, column=25)
-        b8.grid(row=2, column=26)
+        #b6.grid(row=2, column=24)
+       # b7.grid(row=2, column=25)
+       # b8.grid(row=2, column=26)
         plot(timeline)
         simplified_visualize_fire(fm[:,:,0],canvas_automat)
 
@@ -364,15 +365,13 @@ def run_gui():
 
     canvas_plot = FigureCanvasTkAgg(fig, master=root)
 
-
-    b6 = ttk.Button(root, text="Save")
-    b7 = ttk.Button(root, text="Load")
-    b8 = ttk.Button(root, text="New Simulation")
-
+   # b6 = ttk.Button(root, text="Save")
+   # b7 = ttk.Button(root, text="Load")
+    #b8 = ttk.Button(root, text="New Simulation")
 
     #update_map_visualization()
     #TODO: Add style
-    #sv_ttk.set_theme("dark")
+    sv_ttk.set_theme("dark")
     log("GUI initialized")
     root.mainloop()
 
