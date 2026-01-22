@@ -290,7 +290,13 @@ def run_gui():
         ax.plot(x,timeline[2,:],color='red',label='Burning')
         ax.plot(x, timeline[3, :], color='black', label='Burned down')
         ax.plot(x, timeline[4, :], color='grey', label='Unburnable')
+        ax.legend()
         ax.grid(True)
+        canvas_plot.draw()
+
+    def plot_position(current_step):
+        ax.lines[len(ax.lines) -1].remove()
+        ax.axvline(x=current_step,color='black',linestyle='--')
         canvas_plot.draw()
 
 
@@ -345,6 +351,7 @@ def run_gui():
                 log("Step: " + str(current_step))
               #  simplified_visualize_fire(fm[:, :, current_step], canvas_automat)
                 render_optimised(optimised_matrix[current_step],canvas_automat,54,100)
+                plot_position(current_step)
                 root.after(int(tick_speed), lambda: run_animation())
 
 
