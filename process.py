@@ -115,8 +115,6 @@ def optimised_render(map,next_map):
     for i in range(len(map)):
         for j in range(len(map[0])):
             if map[i][j] != next_map[i][j]:
-                cell = OptimisedCell(next_map[i][j], i,j)
+                cell = OptimisedCell(next_map[i][j], i,j,map[i][j])
                 optimised_rendered.append(cell)
-                log(OptimisedCell(next_map[i][j], i,j).x)
-                log(OptimisedCell(next_map[i][j], i,j).y)
     return optimised_rendered

@@ -58,14 +58,10 @@ def append_frame(canvas, frames):
     img = ImageGrab.grab((x, y, dx, dy))
     frames.append(img.convert("P", palette=Image.ADAPTIVE))
 
-def render_optimised(map,canvas,x_max,y_max):
-    canvas_width = canvas.winfo_reqwidth()
-    canvas_height = canvas.winfo_reqheight()
-
-    number_of_nodes_width = x_max#len(forest_map)
-    number_of_nodes_height = y_max#len(forest_map[0])
-
-    cell_width = canvas_width / number_of_nodes_width
-    cell_height = canvas_height / number_of_nodes_height
+def render_optimised_forward(map,canvas,cell_width,cell_height):
     for i in range(len(map)):
             canvas.create_rectangle(map[i].x * cell_width, map[i].y * cell_height, (map[i].x+1) * cell_width, (map[i].y+1) * cell_height, fill=map[i].color)
+
+def render_optimised_backward(map,canvas,cell_width,cell_height):
+    for i in range(len(map)):
+            canvas.create_rectangle(map[i].x * cell_width, map[i].y * cell_height, (map[i].x+1) * cell_width, (map[i].y+1) * cell_height, fill=map[i].old_color)
