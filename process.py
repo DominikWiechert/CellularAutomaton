@@ -2,7 +2,7 @@ from typing import List
 import random
 import yaml
 import os.path
-from custom_datatypes import MapNode, NodeStatus, Probability
+from custom_datatypes import MapNode, NodeStatus, Probability, OptimisedCell
 import numpy as np
 
 
@@ -88,3 +88,35 @@ def simplify_forest_map(forest_map: List[List[MapNode]]) -> List[List[str]]:
                 simplified_forest_map[i][j] = "grey"
 
     return simplified_forest_map
+
+def count_cells(forest_map):
+    g_count=0
+    r_count=0
+    b_count=0
+    gr_count=0
+    unk_count = 0
+    for i in range(len(forest_map)):
+        for j in range(len(forest_map[0])):
+            if forest_map[i,j] == b'green':
+                g_count += 1
+            elif forest_map[i,j] == b'red':
+                r_count += 1
+            elif forest_map[i,j] == b'black':
+                b_count += 1
+            elif forest_map[i,j] == b'grey':
+                gr_count += 1
+            else:
+                unk_count += 1
+    return np.array([[g_count],[r_count],[b_count],[gr_count],[unk_count]])
+
+def optimised_render(map,next_map):
+    optimised_rendered = []
+
+    for i in range(len(map)):
+        for j in range(len(map[0])):
+            if map[i][j] != next_map[i][j]:
+                cell = OptimisedCell(next_map[i][j], i,j)
+                optimised_rendered.append(cell)
+                log(OptimisedCell(next_map[i][j], i,j).x)
+                log(OptimisedCell(next_map[i][j], i,j).y)
+    return optimised_rendered

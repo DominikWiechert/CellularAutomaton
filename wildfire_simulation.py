@@ -4,9 +4,9 @@ import yaml
 from fsspec.asyn import running_async
 
 from input import get_forest_map
-from output import visualize_fire, append_frame, simplified_visualize_fire
-from process import run_simulation_step, log, print_map_2_console, calculate_probability, simplify_forest_map
-from custom_datatypes import NodeStatus
+from output import visualize_fire, append_frame, simplified_visualize_fire, render_optimised
+from process import run_simulation_step, log, print_map_2_console, calculate_probability, simplify_forest_map, count_cells, optimised_render
+from custom_datatypes import NodeStatus, OptimisedCell
 import time
 from ctypes import windll
 import tkinter as tk
@@ -30,6 +30,7 @@ current_step = 0
 t_max = 0
 playing = False
 tick_speed = 500
+optimised_matrix = []
 ###################
 
 def run_simulation(root: tk.Tk, canvas: tk.Canvas, config_path: Path):
@@ -158,7 +159,7 @@ def run_gui():
         # TODO: Select file path for yaml. Might use asksaveasfile method from tkinter.
         with open("config.yaml", 'w') as file:
             yaml.dump(config_data, file)
-        print('Data saved to config.yaml')
+        log('Data saved to config.yaml')
     save_config_button = tk.Button(root, text="Save Config as...", command=save_entries_to_config)
     save_config_button.grid(row=8, column=0, padx=10, pady=10)
 
@@ -189,25 +190,27 @@ def run_gui():
         precent_step = t_max / 50
         progress = 0
 
-        #simplified_forest_matrix = [[["blue" for z in range(t_max)] for y in range(len(forest_map[0]))] for x in range(len(forest_map))]
         simplified_forest_matrix = np.empty([len(forest_map), len(forest_map[0]),t_max], dtype="S10")
         global fm
         fm = np.empty([len(forest_map), len(forest_map[0]),t_max], dtype="S10")
-
+        opti = []
+        timeline = np.zeros([6,t_max])
         for t in range(t_max):
             log("Step: " + str(t))
             time.sleep(tick_speed)
             forest_map = run_simulation_step(forest_map, prob)
             simplified_forest_matrix[:,:,t] = simplify_forest_map(forest_map)
             fm[:, :, t] = simplify_forest_map(forest_map)
-         #   visualize_fire(forest_map, canvas)
-         #   append_frame(canvas, frames)
+
+            timeline[0,t] = t
+            timeline[1:6,t] = count_cells(fm[:, :, t])[:,0]
             progress += precent_step
             pbar.step(progress)
             root.update_idletasks()
             root.update()
-
-        #    run_simulation(root, canvas, config_path)
+        global optimised_matrix
+        for i in range(t_max-1):
+            optimised_matrix.append(optimised_render(fm[:, :, i], fm[:, :, i+1]))
 
         log("Simulation end")
         messagebox.showinfo("Calculation Results", "Calculation completed.")
@@ -256,7 +259,7 @@ def run_gui():
         b6.grid(row=2, column=24)
         b7.grid(row=2, column=25)
         b8.grid(row=2, column=26)
-        plot()
+        plot(timeline)
         simplified_visualize_fire(simplified_forest_matrix[:,:,0],canvas_automat)
         return simplified_forest_matrix
 
@@ -279,10 +282,15 @@ def run_gui():
     #Init Post process gui
 
 
-    def plot():
-        x = np.random.randint(0, 10, 10)
-        y = np.random.randint(0, 10, 10)
-        ax.scatter(x, y)
+    def plot(timeline):
+        x = timeline[0,:]
+        ax.set_ylabel("number of cells [1]")
+        ax.set_xlabel("time steps [1]")
+        ax.plot(x,timeline[1,:],color='green',label='Tree')
+        ax.plot(x,timeline[2,:],color='red',label='Burning')
+        ax.plot(x, timeline[3, :], color='black', label='Burned down')
+        ax.plot(x, timeline[4, :], color='grey', label='Unburnable')
+        ax.grid(True)
         canvas_plot.draw()
 
 
@@ -292,13 +300,14 @@ def run_gui():
             log("Last step reached")
         else:
             current_step = current_step+  1
-        print(current_step)
+            log("Step: " + str(current_step))
         simplified_visualize_fire(fm[:,:,current_step],canvas_automat)
 
     def previous_button():
         global current_step
         if current_step >=1:
             current_step = current_step - 1
+            log("Step: " + str(current_step))
         else:
             log("First step reached")
         simplified_visualize_fire(fm[:,:,current_step],canvas_automat)
@@ -306,13 +315,13 @@ def run_gui():
     def first_button():
         global current_step
         current_step = 0
-        print(current_step)
+        log("Step: " + str(current_step))
         simplified_visualize_fire(fm[:,:,current_step],canvas_automat)
 
     def last_button():
         global current_step
         current_step = t_max-1
-        print(current_step)
+        log("Step: " + str(current_step))
         simplified_visualize_fire(fm[:,:,current_step],canvas_automat)
 
     def play_button():
@@ -328,13 +337,14 @@ def run_gui():
     def run_animation():
         global current_step,playing,tick_speed
         if playing == True:
-            if current_step == t_max-1:
+            if current_step == t_max-2:
                 playing = False
                 b3.config(text="▶")
             else:
                 current_step = current_step + 1
-                print(current_step)
-                simplified_visualize_fire(fm[:, :, current_step], canvas_automat)
+                log("Step: " + str(current_step))
+              #  simplified_visualize_fire(fm[:, :, current_step], canvas_automat)
+                render_optimised(optimised_matrix[current_step],canvas_automat,54,100)
                 root.after(int(tick_speed), lambda: run_animation())
 
 

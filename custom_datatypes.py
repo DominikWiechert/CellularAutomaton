@@ -28,3 +28,12 @@ class Probability:
         self.south = 0
         self.east = 0
         self.west = 0
+
+class OptimisedCell:
+    def __init__(self, color: str, x: int, y: int):
+        self.color = color
+        self.x = x
+        self.y = y
+
+    def __str__(self):
+        return str(self.color + " " + str(self.x) + " " + str(self.y))
