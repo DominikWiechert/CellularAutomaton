@@ -7,9 +7,10 @@ class LandUse(Enum):
 
 class NodeStatus(Enum):
     INTACT = 1
-    BURNING = 2
+    CROWN_BURNING = 2
     BURNT_DOWN = 3
     CANNOT_BURN = 4
+    LOWER_BURNING = 5
 
 class MapNode:
     def __init__(self, land_use: LandUse, height: float):

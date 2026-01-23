@@ -11,7 +11,7 @@ def log(msg):
     if DEBUG == True:
         print(f'\033[92m **',msg,f'**\033[0m')
 
-def calculate_probability() -> Probability:
+def calculate_probability():
     wind_v_max = 100
     if os.path.isfile("config.yaml"):
         with open("config.yaml", 'r') as file:
@@ -39,33 +39,55 @@ def calculate_probability() -> Probability:
     log("Spread prob. west: " + str(probability.west))
     log("Spread prob. north: " + str(probability.north))
     log("Spread prob. south: " + str(probability.south))
-    return probability
 
-def run_simulation_step(forest_map: List[List[MapNode]], probability: Probability) -> List[List[MapNode]]:
+    prob_ground = probability.base*0.6
+    return probability,prob_ground
+
+def calc_incl(h_local,h_neighbor,abst):
+    abst = 5 #TODO: calculate distance of tiles
+    return ((np.arcsin((h_neighbor-h_local)/abst) + 90) / 90)
+
+
+def run_simulation_step(forest_map: List[List[MapNode]],probability_crown,probability_ground: float) -> List[List[MapNode]]:
     forest_map_temp = forest_map.copy()
     for k in range(len(forest_map)):
         for l in range(len(forest_map[0])):
-            if forest_map[k][l].status == NodeStatus.BURNING:
-                #-- Spread due to closeness --
+            if forest_map[k][l].status == NodeStatus.CROWN_BURNING:
                 if k != 0:
-                    if forest_map[k - 1][l].status == NodeStatus.INTACT and random.randint(1, 100) <= probability.west: #west
-                        forest_map_temp[k - 1][l].status = NodeStatus.BURNING
+                    if (forest_map[k - 1][l].status == NodeStatus.INTACT or forest_map[k - 1][l].status == NodeStatus.LOWER_BURNING) and random.randint(1, 100*round(calc_incl(forest_map[k ][l].height,forest_map[k - 1][l].height,1))) <= probability_crown.west: #west
+                        forest_map_temp[k - 1][l].status = NodeStatus.CROWN_BURNING
                 if l != 0:
-                    if forest_map[k][l - 1].status == NodeStatus.INTACT and random.randint(1, 100) <= probability.south: #south
-                        forest_map_temp[k][l - 1].status = NodeStatus.BURNING
+                    if (forest_map[k][l - 1].status == NodeStatus.INTACT or forest_map[k][l - 1].status == NodeStatus.LOWER_BURNING) and random.randint(1, 100*round(calc_incl(forest_map[k ][l].height,forest_map[k][l-1].height,1))) <= probability_crown.south: #south
+                        forest_map_temp[k][l - 1].status = NodeStatus.CROWN_BURNING
                 if k != len(forest_map) - 1:
-                    if forest_map[k + 1][l].status == NodeStatus.INTACT and random.randint(1, 100) <= probability.east: #east
-                        forest_map_temp[k + 1][l].status = NodeStatus.BURNING
+                    if (forest_map[k + 1][l].status == NodeStatus.INTACT or forest_map[k + 1][l].status == NodeStatus.LOWER_BURNING) and random.randint(1, 100*round(calc_incl(forest_map[k ][l].height,forest_map[k + 1][l].height,1))) <= probability_crown.east: #east
+                        forest_map_temp[k + 1][l].status = NodeStatus.CROWN_BURNING
                 if l != len(forest_map[0]) - 1:
-                    if forest_map[k][l + 1].status == NodeStatus.INTACT and random.randint(1, 100) <= probability.north: #north
-                        forest_map_temp[k][l + 1].status = NodeStatus.BURNING
+                    if (forest_map[k][l + 1].status == NodeStatus.INTACT or forest_map[k][l + 1].status == NodeStatus.LOWER_BURNING) and random.randint(1, 100*round(calc_incl(forest_map[k ][l].height,forest_map[k][l+1].height,1))) <= probability_crown.north: #north
+                        forest_map_temp[k][l + 1].status = NodeStatus.CROWN_BURNING
 
                 #-- Burning down --
                 if forest_map[k][l].burning_duration >= 5:
                     forest_map_temp[k][l].status = NodeStatus.BURNT_DOWN
                 else:
                     forest_map_temp[k][l].burning_duration += 1
-
+            elif forest_map[k][l].status == NodeStatus.LOWER_BURNING: #Groundfire not effected by wind, only by dryness and elevation
+                if k != 0:
+                    if forest_map[k - 1][l].status == NodeStatus.INTACT and random.randint(1, 100*round(calc_incl(forest_map[k ][l].height,forest_map[k - 1][l].height,1))) <= probability_ground: #west
+                        forest_map_temp[k - 1][l].status = NodeStatus.LOWER_BURNING
+                if l != 0:
+                    if forest_map[k][l - 1].status == NodeStatus.INTACT and random.randint(1, 100*round(calc_incl(forest_map[k ][l].height,forest_map[k][l-1].height,1))) <= probability_ground: #south
+                        forest_map_temp[k][l - 1].status = NodeStatus.LOWER_BURNING
+                if k != len(forest_map) - 1:
+                    if forest_map[k + 1][l].status == NodeStatus.INTACT and random.randint(1, 100*round(calc_incl(forest_map[k ][l].height,forest_map[k + 1][l].height,1))) <= probability_ground: #east
+                        forest_map_temp[k + 1][l].status = NodeStatus.LOWER_BURNING
+                if l != len(forest_map[0]) - 1:
+                    if forest_map[k][l + 1].status == NodeStatus.INTACT and random.randint(1, 100*round(calc_incl(forest_map[k ][l].height,forest_map[k][l+1].height,1))) <= probability_ground: #north
+                        forest_map_temp[k][l + 1].status = NodeStatus.LOWER_BURNING
+                if random.randint(1, 50) == 1:
+                    forest_map[k][l].status = NodeStatus.CROWN_BURNING
+                elif random.randint(1, 50) == 1:
+                    forest_map[k][l].status = NodeStatus.INTACT
     return forest_map_temp
 
 def print_map_2_console(forest_map: List[List[MapNode]]) -> None:
@@ -80,12 +102,14 @@ def simplify_forest_map(forest_map: List[List[MapNode]]) -> List[List[str]]:
         for j in range(len(forest_map[0])):
             if forest_map[i][j].status == NodeStatus.INTACT:
                 simplified_forest_map[i][j] = "green"
-            elif forest_map[i][j].status == NodeStatus.BURNING:
+            elif forest_map[i][j].status == NodeStatus.CROWN_BURNING:
                 simplified_forest_map[i][j] = "red"
             elif forest_map[i][j].status == NodeStatus.BURNT_DOWN:
                 simplified_forest_map[i][j] = "black"
             elif forest_map[i][j].status == NodeStatus.CANNOT_BURN:
                 simplified_forest_map[i][j] = "grey"
+            elif forest_map[i][j].status == NodeStatus.LOWER_BURNING:
+                simplified_forest_map[i][j] = "orange"
 
     return simplified_forest_map
 
@@ -95,6 +119,7 @@ def count_cells(forest_map):
     b_count=0
     gr_count=0
     unk_count = 0
+    o_count = 0
     for i in range(len(forest_map)):
         for j in range(len(forest_map[0])):
             if forest_map[i,j] == b'green':
@@ -105,9 +130,11 @@ def count_cells(forest_map):
                 b_count += 1
             elif forest_map[i,j] == b'grey':
                 gr_count += 1
+            elif forest_map[i,j] == b'orange':
+                o_count += 1
             else:
                 unk_count += 1
-    return np.array([[g_count],[r_count],[b_count],[gr_count],[unk_count]])
+    return np.array([[g_count],[r_count],[b_count],[gr_count],[o_count],[unk_count]])
 
 def optimised_render(map,next_map):
     optimised_rendered = []

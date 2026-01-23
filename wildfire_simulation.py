@@ -154,26 +154,26 @@ def run_gui():
         global tick_speed
         tick_speed = config['tick_speed']  # [s]
         print(tick_speed)
-        prob = calculate_probability()
+        prob_crown,prob_ground = calculate_probability()
 
-        forest_map[25][30].status = NodeStatus.BURNING
+        forest_map[25][30].status = NodeStatus.LOWER_BURNING
 
         precent_step = 50 / t_max
 
         global fm
         fm = np.empty([len(forest_map), len(forest_map[0]),t_max+1], dtype="S10")
-        timeline = np.zeros([6,t_max+1])
+        timeline = np.zeros([7,t_max+1])
 
         fm[:, :, 0] = simplify_forest_map(forest_map)
         timeline[0, 0] = 0
-        timeline[1:6, 0] = count_cells(fm[:, :, 0])[:, 0]
+        timeline[1:7, 0] = count_cells(fm[:, :, 0])[:, 0]
         for t in range(1,t_max+1):
             log("Step: " + str(t))
             prog_label.config(text=f"Simulating {t}/{t_max}")
-            forest_map = run_simulation_step(forest_map, prob)
+            forest_map = run_simulation_step(forest_map, prob_crown,prob_ground)
             fm[:, :, t] = simplify_forest_map(forest_map)
             timeline[0,t] = t
-            timeline[1:6,t] = count_cells(fm[:, :, t])[:,0]
+            timeline[1:7,t] = count_cells(fm[:, :, t])[:,0]
             pbar['value'] += precent_step
             root.update_idletasks()
             root.update()
@@ -274,11 +274,12 @@ def run_gui():
         ax.set_ylabel("number of cells [1]")
         ax.set_xlabel("time steps [1]")
         ax.plot(x,timeline[1,:],color='green',label='Tree')
-        ax.plot(x,timeline[2,:],color='red',label='Burning')
+        ax.plot(x,timeline[2,:],color='red',label='Crown burning')
         ax.plot(x, timeline[3, :], color='black', label='Burned down')
-        ax.plot(x, timeline[4, :], color='grey', label='Unburnable')
+        ax.plot(x, timeline[5, :], color='orange', label='Lower vegetation burning')
         ax.legend()
         ax.grid(True)
+        ax.axvline(x=current_step,color='black',linestyle='--')
         canvas_plot.draw()
 
     def plot_position(current_step):

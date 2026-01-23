@@ -18,12 +18,15 @@ def visualize_fire(forest_map: List[List[MapNode]], canvas) -> None:
         for j in range(len(forest_map[0])):
             if forest_map[i][j].status == NodeStatus.INTACT:
                 canvas.create_rectangle(i * cell_width, j * cell_height, (i+1) * cell_width, (j+1) * cell_height, fill="green")
-            elif forest_map[i][j].status == NodeStatus.BURNING:
+            elif forest_map[i][j].status == NodeStatus.CROWN_BURNING:
                 canvas.create_rectangle(i * cell_width, j * cell_height, (i+1) * cell_width, (j+1) * cell_height, fill="red")
             elif forest_map[i][j].status == NodeStatus.BURNT_DOWN:
                 canvas.create_rectangle(i * cell_width, j * cell_height, (i+1) * cell_width, (j+1) * cell_height, fill="black")
             elif forest_map[i][j].status == NodeStatus.CANNOT_BURN:
                 canvas.create_rectangle(i * cell_width, j * cell_height, (i+1) * cell_width, (j+1) * cell_height, fill="grey")
+            elif forest_map[i][j].status == NodeStatus.LOWER_BURNING:
+                canvas.create_rectangle(i * cell_width, j * cell_height, (i+1) * cell_width, (j+1) * cell_height, fill="orange")
+
 
 def simplified_visualize_fire(forest_map, canvas) -> None:
     #calculate pixel size
