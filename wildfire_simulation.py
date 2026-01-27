@@ -212,7 +212,7 @@ class GuiHandler:
                 self.root.after(int(self.tick_speed), lambda: self.run_animation())
 
     def __init__(self):
-        # global variables
+        self.timeline = None
         self.forest_map_simplified = 0
         self.current_step = 0
         self.t_max = 0
@@ -323,7 +323,6 @@ class GuiHandler:
         sv_ttk.set_theme("dark")
         log("GUI initialized")
         self.root.mainloop()
-
 
 
 if __name__ == "__main__":
