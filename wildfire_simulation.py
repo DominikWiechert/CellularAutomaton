@@ -28,7 +28,8 @@ class GuiHandler:
             'max_axis_length': float(self.max_axis_length_entry.get()),
             'probability': float(self.probability_entry.get()),
             'wind_speed_x': float(self.wind_speed_x_entry.get()),
-            'wind_speed_y': float(self.wind_speed_y_entry.get())
+            'wind_speed_y': float(self.wind_speed_y_entry.get()),
+            'fire_starting_position': [x for x in self.fire_starting_position_entry.get().split(';')]
         }
         # TODO: Select file path for yaml. Might use asksaveasfile method from tkinter.
         with open("config.yaml", 'w') as file:
@@ -40,6 +41,7 @@ class GuiHandler:
         self.tick_speed = int(self.slider.get())
 
     def plot(self):
+        self.ax.clear()
         x = self.timeline[0,:]
         self.ax.set_ylabel("number of cells [1]")
         self.ax.set_xlabel("time steps [1]")
@@ -58,7 +60,7 @@ class GuiHandler:
         self.canvas_plot.draw()
 
     def update_map_visualization(self):
-        forest_map = get_forest_map(map_path=Path(self.path_entry.get()), max_axis_length=100)
+        forest_map = get_forest_map(map_path=Path(self.path_entry.get()), max_axis_length=self.max_axis_length)
         #  visualize_fire(forest_map, canvas)
 
     def select_file(self):
@@ -71,7 +73,7 @@ class GuiHandler:
             self.path_entry.insert(0, file_path)
         # update_map_visualization()
 
-    def update_config_values_from_config_path(self):
+    def update_config_entries_from_config_path(self):
         with open(self.config_path, 'r') as file:
             config = yaml.safe_load(file)
         self.path_entry.delete(0, tk.END)
@@ -88,6 +90,22 @@ class GuiHandler:
         self.wind_speed_x_entry.insert(0, config['wind_speed_x'])
         self.wind_speed_y_entry.delete(0, tk.END)
         self.wind_speed_y_entry.insert(0, config['wind_speed_y'])
+        self.fire_starting_position_entry.delete(0, tk.END)
+        self.fire_starting_position_entry.insert(0, ';'.join(config['fire_starting_position']))
+
+    def read_config_variables_to_class_entries(self):
+        self.map_picture_path = Path(self.path_entry.get())
+        self.t_max = int(float(self.t_max_entry.get()))
+        self.tick_speed = int(float(self.tick_speed_entry.get()))
+        self.max_axis_length = int(float(self.max_axis_length_entry.get()))
+        self.probability = self.probability_entry.get()
+        self.wind_speed_x = self.wind_speed_x_entry.get()
+        self.wind_speed_y = self.wind_speed_y_entry.get()
+        self.fire_starting_position = [int(x) for x in self.fire_starting_position_entry.get().split(';')]
+
+    def validate_config_entries(self):
+        # TODO
+        pass
 
     def load_config_from_file(self):
         file_path = tk.filedialog.askopenfilename(
@@ -96,22 +114,15 @@ class GuiHandler:
         )
         if file_path:
             self.config_path = Path(file_path)
-            self.update_config_values_from_config_path()
+            self.update_config_entries_from_config_path()
             self.update_map_visualization()
 
     def run_calculation(self):
-        # TODO: calculate -> only save needed var and delete the others -> change to new window
-        # TODO: Use variables from entries, not from config file.
-        with open(self.config_path, 'r') as file:
-            config = yaml.safe_load(file)
-        forest_map = get_forest_map(map_path=Path(config['path']), max_axis_length=100)
-        self.t_max = config['t_max']
-        self.tick_speed = config['tick_speed']  # [s]
+        self.read_config_variables_to_class_entries()
+        forest_map = get_forest_map(map_path=self.map_picture_path, max_axis_length=self.max_axis_length)
         prob_crown, prob_ground = calculate_probability()
 
-
-        # TODO: Set starting point manually
-        forest_map[25][30].status = NodeStatus.LOWER_BURNING
+        forest_map[self.fire_starting_position[0]][self.fire_starting_position[1]].status = NodeStatus.LOWER_BURNING
 
         precent_step = 50 / self.t_max
 
@@ -148,7 +159,7 @@ class GuiHandler:
         self.prog_label.config(text="Done!")
         log("Simulation end")
         messagebox.showinfo("Calculation Results", "Calculation completed.")
-
+        self.notebook.select(self.tab_post)
 
 
         self.canvas_plot.get_tk_widget().grid(row=0, column=21, columnspan=10, sticky='e')
@@ -209,36 +220,85 @@ class GuiHandler:
                 self.current_step += 1
                 log("Step: " + str(self.current_step))
                 self.plot_position()
-                self.root.after(int(self.tick_speed), lambda: self.run_animation())
+                self.root.after(self.tick_speed, lambda: self.run_animation())
 
     def __init__(self):
+        # Variables
         self.timeline = None
-        self.forest_map_simplified = 0
+        self.forest_map_simplified = None
         self.current_step = 0
-        self.t_max = 0
+        self.t_max = None
         self.playing = False
         self.tick_speed = 500
         self.optimised_matrix = []
         self.cell_width = 1
         self.cell_height = 1
         self.config_path = Path('config.yaml')
+        self.max_axis_length = None
+        self.probability = None
+        self.wind_speed_x = None
+        self.wind_speed_y = None
+        self.map_picture_path = None
+        self.fire_starting_position = None
 
+        # Root window
         log("Init pre-processing GUI...")
         self.root = tk.Tk()
         self.root.title("Wildfire Simulation - Pre-Processing")
         self.root.geometry("2000x1200")
-        notebook = ttk.Notebook(self.root)
-        self.tab_pre = ttk.Frame(notebook)
-        self.tab_post = ttk.Frame(notebook)
-        notebook.add(self.tab_pre, text="Pre-Processing")
-        notebook.add(self.tab_post, text="Processing")
-        notebook.pack(expand=1, fill='both')
+        self.notebook = ttk.Notebook(self.root)
+        self.tab_pre = ttk.Frame(self.notebook)
+        self.tab_post = ttk.Frame(self.notebook)
+        self.notebook.add(self.tab_pre, text="Pre-Processing")
+        self.notebook.add(self.tab_post, text="Processing")
+        self.notebook.pack(expand=1, fill='both')
 
 
+        # First tab
         path_entry_label = tk.Label(self.tab_pre, text="Map picture path:")
         path_entry_label.grid(row=0, column=0, padx=10, pady=10)
         self.path_entry = tk.Entry(self.tab_pre, width=100)
-        self.path_entry.grid(row=0, column=1, columnspan=2, padx=10, pady=10)
+        self.path_entry.grid(row=0, column=1, columnspan=1, padx=10, pady=10)
+
+
+        self.select_file_button = tk.Button(self.tab_pre, text="Select File", command=self.select_file)
+        self.select_file_button.grid(row=0, column=3, padx=10, pady=10)
+
+        t_max_label = tk.Label(self.tab_pre, text="Simulation Time:")
+        t_max_label.grid(row=1, column=0, padx=10, pady=10)
+        self.t_max_entry = tk.Entry(self.tab_pre, width=10)
+        self.t_max_entry.grid(row=1, column=1, columnspan=1, sticky="we", padx=10, pady=10)
+
+        tick_speed_label = tk.Label(self.tab_pre, text="Tick speed:")
+        tick_speed_label.grid(row=2, column=0, padx=10, pady=10)
+        self.tick_speed_entry = tk.Entry(self.tab_pre, width=10)
+        self.tick_speed_entry.grid(row=2, column=1, columnspan=1, sticky="we", padx=10, pady=10)
+
+        max_axis_length_label = tk.Label(self.tab_pre, text="max_axis_length:")
+        max_axis_length_label.grid(row=3, column=0, padx=10, pady=10)
+        self.max_axis_length_entry = tk.Entry(self.tab_pre, width=10)
+        self.max_axis_length_entry.grid(row=3, column=1, columnspan=1, sticky="we", padx=10, pady=10)
+
+        probability_label = tk.Label(self.tab_pre, text="probability:")
+        probability_label.grid(row=4, column=0, padx=10, pady=10)
+        self.probability_entry = tk.Entry(self.tab_pre, width=10)
+        self.probability_entry.grid(row=4, column=1, columnspan=1, sticky="we", padx=10, pady=10)
+
+        wind_speed_x_label = tk.Label(self.tab_pre, text="wind_speed_x:")
+        wind_speed_x_label.grid(row=5, column=0, padx=10, pady=10)
+        self.wind_speed_x_entry = tk.Entry(self.tab_pre, width=10)
+        self.wind_speed_x_entry.grid(row=5, column=1, columnspan=1, sticky="we", padx=10, pady=10)
+
+        wind_speed_y_label = tk.Label(self.tab_pre, text="wind_speed_y:")
+        wind_speed_y_label.grid(row=6, column=0, padx=10, pady=10)
+        self.wind_speed_y_entry = tk.Entry(self.tab_pre, width=10)
+        self.wind_speed_y_entry.grid(row=6, column=1, columnspan=1, sticky="we", padx=10, pady=10)
+
+        fire_starting_position_label = tk.Label(self.tab_pre, text="Fire starting position 'xx;yy':")
+        fire_starting_position_label.grid(row=7, column=0, padx=10, pady=10)
+        self.fire_starting_position_entry = tk.Entry(self.tab_pre, width=10)
+        self.fire_starting_position_entry.grid(row=7, column=1, padx=10, pady=10)
+        self.update_config_entries_from_config_path()
 
         self.save_config_button = tk.Button(self.tab_pre, text="Save Config as...", command=self.save_entries_to_config)
         self.save_config_button.grid(row=8, column=0, padx=10, pady=10)
@@ -291,7 +351,7 @@ class GuiHandler:
         wind_speed_y_label.grid(row=6, column=0, padx=10, pady=10)
         self.wind_speed_y_entry = tk.Entry(self.tab_pre, width=100)
         self.wind_speed_y_entry.grid(row=6, column=1, columnspan=3, sticky="we", padx=10, pady=10)
-        self.update_config_values_from_config_path()
+        self.update_config_entries_from_config_path()
         # load post ops gui
 
         self.fig, self.ax = plt.subplots()
@@ -323,7 +383,6 @@ class GuiHandler:
         sv_ttk.set_theme("dark")
         log("GUI initialized")
         self.root.mainloop()
-
 
 if __name__ == "__main__":
     gui_handler = GuiHandler()
