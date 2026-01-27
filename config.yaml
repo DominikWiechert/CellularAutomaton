@@ -1,4 +1,4 @@
-max_axis_length: 100.0
+max_axis_length: 100
 path: map_pictures/osm_map.png
 probability: 40.0
 t_max: 150
