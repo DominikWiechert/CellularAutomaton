@@ -1,3 +1,4 @@
+from os import remove
 from pathlib import Path
 import yaml
 from matplotlib import pyplot as plt
@@ -18,6 +19,29 @@ try:
 except Exception:
     pass
 
+class HeightEntry(tk.Frame):
+    def __init__(self, root, remove_command):
+        super().__init__(root)
+        x_label = tk.Label(self, text="x:")
+        x_label.grid(row=0, column=0, padx=2)
+        self.x_entry = tk.Entry(self)
+        self.x_entry.grid(row=0, column=1, padx=2)
+
+        y_label = tk.Label(self, text="y:")
+        y_label.grid(row=1, column=0, padx=2)
+        self.y_entry = tk.Entry(self)
+        self.y_entry.grid(row=1, column=1, padx=2)
+
+        h_label = tk.Label(self, text="height:")
+        h_label.grid(row=2, column=0, padx=2)
+        self.h_entry = tk.Entry(self)
+        self.h_entry.grid(row=2, column=1, padx=2)
+        remove_button = tk.Button(self, text="Remove entry", command=self.remove_entry)
+        remove_button.grid(row=0, column=2, padx=2)
+        self.remove_command = remove_command
+
+    def remove_entry(self):
+        self.remove_command(self)
 
 class GuiHandler:
     def save_entries_to_config(self):
@@ -222,6 +246,19 @@ class GuiHandler:
                 self.plot_position()
                 self.root.after(self.tick_speed, lambda: self.run_animation())
 
+    def add_height_entry(self):
+        entry = HeightEntry(self.heights_frame, self.remove_height_entry)
+        entry.pack()
+        self.last_free_row += 1
+        self.height_entries.append(entry)
+
+    def remove_height_entry(self, entry):
+        entry.destroy()
+        self.height_entries.remove(entry)
+
+    def read_height_entries(self):
+        return [[entry.x_entry.get(), entry.y_entry.get(), entry.h_entry.get()] for entry in self.height_entries]
+
     def __init__(self):
         # Variables
         self.timeline = None
@@ -253,13 +290,11 @@ class GuiHandler:
         self.notebook.add(self.tab_post, text="Processing")
         self.notebook.pack(expand=1, fill='both')
 
-
         # First tab
         path_entry_label = tk.Label(self.tab_pre, text="Map picture path:")
         path_entry_label.grid(row=0, column=0, padx=10, pady=10)
         self.path_entry = tk.Entry(self.tab_pre, width=100)
         self.path_entry.grid(row=0, column=1, columnspan=1, padx=10, pady=10)
-
 
         self.select_file_button = tk.Button(self.tab_pre, text="Select File", command=self.select_file)
         self.select_file_button.grid(row=0, column=3, padx=10, pady=10)
@@ -352,8 +387,16 @@ class GuiHandler:
         self.wind_speed_y_entry = tk.Entry(self.tab_pre, width=100)
         self.wind_speed_y_entry.grid(row=6, column=1, columnspan=3, sticky="we", padx=10, pady=10)
         self.update_config_entries_from_config_path()
-        # load post ops gui
 
+        self.height_entries = []
+        self.heights_frame = tk.Frame(self.tab_pre)
+        self.heights_frame.grid(row=11, column=0, padx=10, pady=10)
+        self.add_height_entry_button = tk.Button(self.heights_frame, text="Add height entry", command=self.add_height_entry)
+        self.add_height_entry_button.pack()
+        self.last_free_row = 12
+        self.add_height_entry()
+
+        # load post ops gui
         self.fig, self.ax = plt.subplots()
 
         self.canvas_automat = tk.Canvas(self.tab_post, width=730, height=730, bg="red")
