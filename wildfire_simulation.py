@@ -1,4 +1,3 @@
-from os import remove
 from pathlib import Path
 import yaml
 from matplotlib import pyplot as plt
@@ -257,8 +256,16 @@ class GuiHandler:
         self.height_entries.remove(entry)
 
     def read_height_entries(self):
+        # TODO: Use this function
         return [[entry.x_entry.get(), entry.y_entry.get(), entry.h_entry.get()] for entry in self.height_entries]
 
+    def show_forest_map_preview(self):
+        self.axes_preview[0].plot([1, 2, 3], [1, 4, 9])
+        self.axes_preview[0].set_title("Heights")
+        self.axes_preview[1].plot([1, 2, 3], [1, 2, 3])
+        self.axes_preview[1].set_title("Terrain types")
+        self.canvas_plot_preview.draw()
+    
     def __init__(self):
         # Variables
         self.timeline = None
@@ -284,119 +291,96 @@ class GuiHandler:
         self.root.title("Wildfire Simulation - Pre-Processing")
         self.root.geometry("2000x1200")
         self.notebook = ttk.Notebook(self.root)
-        self.tab_pre = ttk.Frame(self.notebook)
+
+        tab_preprocessing = ttk.Frame(self.notebook)
+        tab_preview = ttk.Frame(self.notebook)
         self.tab_post = ttk.Frame(self.notebook)
-        self.notebook.add(self.tab_pre, text="Pre-Processing")
+
+        self.notebook.add(tab_preprocessing, text="Pre-Processing")
+        self.notebook.add(tab_preview, text="Map preview")
         self.notebook.add(self.tab_post, text="Processing")
         self.notebook.pack(expand=1, fill='both')
 
-        # First tab
-        path_entry_label = tk.Label(self.tab_pre, text="Map picture path:")
+        # Preprocessing tab
+        path_entry_label = tk.Label(tab_preprocessing, text="Map picture path:")
         path_entry_label.grid(row=0, column=0, padx=10, pady=10)
-        self.path_entry = tk.Entry(self.tab_pre, width=100)
+        self.path_entry = tk.Entry(tab_preprocessing, width=100)
         self.path_entry.grid(row=0, column=1, columnspan=1, padx=10, pady=10)
 
-        self.select_file_button = tk.Button(self.tab_pre, text="Select File", command=self.select_file)
+        self.select_file_button = tk.Button(tab_preprocessing, text="Select File", command=self.select_file)
         self.select_file_button.grid(row=0, column=3, padx=10, pady=10)
 
-        t_max_label = tk.Label(self.tab_pre, text="Simulation Time:")
+        t_max_label = tk.Label(tab_preprocessing, text="Simulation Time:")
         t_max_label.grid(row=1, column=0, padx=10, pady=10)
-        self.t_max_entry = tk.Entry(self.tab_pre, width=10)
+        self.t_max_entry = tk.Entry(tab_preprocessing, width=10)
         self.t_max_entry.grid(row=1, column=1, columnspan=1, sticky="we", padx=10, pady=10)
 
-        tick_speed_label = tk.Label(self.tab_pre, text="Tick speed:")
+        tick_speed_label = tk.Label(tab_preprocessing, text="Tick speed:")
         tick_speed_label.grid(row=2, column=0, padx=10, pady=10)
-        self.tick_speed_entry = tk.Entry(self.tab_pre, width=10)
+        self.tick_speed_entry = tk.Entry(tab_preprocessing, width=10)
         self.tick_speed_entry.grid(row=2, column=1, columnspan=1, sticky="we", padx=10, pady=10)
 
-        max_axis_length_label = tk.Label(self.tab_pre, text="max_axis_length:")
+        max_axis_length_label = tk.Label(tab_preprocessing, text="max_axis_length:")
         max_axis_length_label.grid(row=3, column=0, padx=10, pady=10)
-        self.max_axis_length_entry = tk.Entry(self.tab_pre, width=10)
+        self.max_axis_length_entry = tk.Entry(tab_preprocessing, width=10)
         self.max_axis_length_entry.grid(row=3, column=1, columnspan=1, sticky="we", padx=10, pady=10)
 
-        probability_label = tk.Label(self.tab_pre, text="probability:")
+        probability_label = tk.Label(tab_preprocessing, text="probability:")
         probability_label.grid(row=4, column=0, padx=10, pady=10)
-        self.probability_entry = tk.Entry(self.tab_pre, width=10)
+        self.probability_entry = tk.Entry(tab_preprocessing, width=10)
         self.probability_entry.grid(row=4, column=1, columnspan=1, sticky="we", padx=10, pady=10)
 
-        wind_speed_x_label = tk.Label(self.tab_pre, text="wind_speed_x:")
+        wind_speed_x_label = tk.Label(tab_preprocessing, text="wind_speed_x:")
         wind_speed_x_label.grid(row=5, column=0, padx=10, pady=10)
-        self.wind_speed_x_entry = tk.Entry(self.tab_pre, width=10)
+        self.wind_speed_x_entry = tk.Entry(tab_preprocessing, width=10)
         self.wind_speed_x_entry.grid(row=5, column=1, columnspan=1, sticky="we", padx=10, pady=10)
 
-        wind_speed_y_label = tk.Label(self.tab_pre, text="wind_speed_y:")
+        wind_speed_y_label = tk.Label(tab_preprocessing, text="wind_speed_y:")
         wind_speed_y_label.grid(row=6, column=0, padx=10, pady=10)
-        self.wind_speed_y_entry = tk.Entry(self.tab_pre, width=10)
+        self.wind_speed_y_entry = tk.Entry(tab_preprocessing, width=10)
         self.wind_speed_y_entry.grid(row=6, column=1, columnspan=1, sticky="we", padx=10, pady=10)
 
-        fire_starting_position_label = tk.Label(self.tab_pre, text="Fire starting position 'xx;yy':")
+        fire_starting_position_label = tk.Label(tab_preprocessing, text="Fire starting position 'xx;yy':")
         fire_starting_position_label.grid(row=7, column=0, padx=10, pady=10)
-        self.fire_starting_position_entry = tk.Entry(self.tab_pre, width=10)
+        self.fire_starting_position_entry = tk.Entry(tab_preprocessing, width=10)
         self.fire_starting_position_entry.grid(row=7, column=1, padx=10, pady=10)
         self.update_config_entries_from_config_path()
 
-        self.save_config_button = tk.Button(self.tab_pre, text="Save Config as...", command=self.save_entries_to_config)
-        self.save_config_button.grid(row=8, column=0, padx=10, pady=10)
+        save_config_button = tk.Button(tab_preprocessing, text="Save Config as...", command=self.save_entries_to_config)
+        save_config_button.grid(row=8, column=0, padx=10, pady=10)
 
-        self.load_config_button = tk.Button(self.tab_pre, text="Load Config", command=self.load_config_from_file)
-        self.load_config_button.grid(row=8, column=1, padx=10, pady=10)
+        load_config_button = tk.Button(tab_preprocessing, text="Load Config", command=self.load_config_from_file)
+        load_config_button.grid(row=8, column=1, padx=10, pady=10)
 
-        self.calculate_button = tk.Button(self.tab_pre, text="Run calculation", command=self.run_calculation)
-        self.calculate_button.grid(row=8, column=2, padx=10, pady=10)
+        calculate_button = tk.Button(tab_preprocessing, text="Run calculation", command=self.run_calculation)
+        calculate_button.grid(row=8, column=2, padx=10, pady=10)
 
-        self.load_post_pros_button = tk.Button(self.tab_pre, text="Load calculation", command=self.load_post_pros)
-        self.load_post_pros_button.grid(row=8, column=3, padx=10, pady=10)
+        load_post_pros_button = tk.Button(tab_preprocessing, text="Load calculation", command=self.load_post_pros)
+        load_post_pros_button.grid(row=8, column=3, padx=10, pady=10)
 
-        pbar_label = tk.Label(self.tab_pre, text="Progress:")
+        pbar_label = tk.Label(tab_preprocessing, text="Progress:")
         pbar_label.grid(row=9, column=0, padx=10, pady=10)
-        self.pbar = ttk.Progressbar(self.tab_pre, orient="horizontal", length=100, mode='determinate')
+        self.pbar = ttk.Progressbar(tab_preprocessing, orient="horizontal", length=100, mode='determinate')
         self.pbar.grid(row=9, column=1, sticky="we", columnspan=3, padx=10, pady=10)
-        self.prog_label = tk.Label(self.tab_pre, text="")
+        self.prog_label = tk.Label(tab_preprocessing, text="")
         self.prog_label.grid(row=10, column=1, columnspan=3, padx=10, pady=10)
 
-        self.select_file_button = tk.Button(self.tab_pre, text="Select File", command=self.select_file)
-        self.select_file_button.grid(row=0, column=3, padx=10, pady=10)
-
-        t_max_label = tk.Label(self.tab_pre, text="Simulation Time:")
-        t_max_label.grid(row=1, column=0, padx=10, pady=10)
-        self.t_max_entry = tk.Entry(self.tab_pre, width=100)
-        self.t_max_entry.grid(row=1, column=1, columnspan=3, sticky="we", padx=10, pady=10)
-
-        tick_speed_label = tk.Label(self.tab_pre, text="Tick speed:")
-        tick_speed_label.grid(row=2, column=0, padx=10, pady=10)
-        self.tick_speed_entry = tk.Entry(self.tab_pre, width=100)
-        self.tick_speed_entry.grid(row=2, column=1, columnspan=3, sticky="we", padx=10, pady=10)
-
-        max_axis_length_label = tk.Label(self.tab_pre, text="max_axis_length:")
-        max_axis_length_label.grid(row=3, column=0, padx=10, pady=10)
-        self.max_axis_length_entry = tk.Entry(self.tab_pre, width=100)
-        self.max_axis_length_entry.grid(row=3, column=1, columnspan=3, sticky="we", padx=10, pady=10)
-
-        probability_label = tk.Label(self.tab_pre, text="probability:")
-        probability_label.grid(row=4, column=0, padx=10, pady=10)
-        self.probability_entry = tk.Entry(self.tab_pre, width=100)
-        self.probability_entry.grid(row=4, column=1, columnspan=3, sticky="we", padx=10, pady=10)
-
-        wind_speed_x_label = tk.Label(self.tab_pre, text="wind_speed_x:")
-        wind_speed_x_label.grid(row=5, column=0, padx=10, pady=10)
-        self.wind_speed_x_entry = tk.Entry(self.tab_pre, width=100)
-        self.wind_speed_x_entry.grid(row=5, column=1, columnspan=3, sticky="we", padx=10, pady=10)
-
-        wind_speed_y_label = tk.Label(self.tab_pre, text="wind_speed_y:")
-        wind_speed_y_label.grid(row=6, column=0, padx=10, pady=10)
-        self.wind_speed_y_entry = tk.Entry(self.tab_pre, width=100)
-        self.wind_speed_y_entry.grid(row=6, column=1, columnspan=3, sticky="we", padx=10, pady=10)
-        self.update_config_entries_from_config_path()
-
         self.height_entries = []
-        self.heights_frame = tk.Frame(self.tab_pre)
+        self.heights_frame = tk.Frame(tab_preprocessing)
         self.heights_frame.grid(row=11, column=0, padx=10, pady=10)
         self.add_height_entry_button = tk.Button(self.heights_frame, text="Add height entry", command=self.add_height_entry)
         self.add_height_entry_button.pack()
         self.last_free_row = 12
         self.add_height_entry()
 
-        # load post ops gui
+        # Preview tab
+        show_preview_button = tk.Button(tab_preview, text="Show map preview", command=self.show_forest_map_preview)
+        show_preview_button.pack(anchor=tk.NW)
+        self.fig_preview, self.axes_preview = plt.subplots(1,2)
+        self.canvas_plot_preview = FigureCanvasTkAgg(self.fig_preview, master=tab_preview)
+        self.canvas_plot_preview.get_tk_widget().pack()
+        
+        # Postprocessing tab
         self.fig, self.ax = plt.subplots()
 
         self.canvas_automat = tk.Canvas(self.tab_post, width=730, height=730, bg="red")
