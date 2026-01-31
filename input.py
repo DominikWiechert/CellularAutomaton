@@ -48,8 +48,8 @@ def get_forest_map(map_path: Path = None, nodes_per_axis: int = 200, axis_length
     data_heights = np.array([float(dataset[2]) for dataset in heights])
 
     # Grid for interpolation
-    grid_x = np.arange(0, n_nodes_width, 1, dtype=float)
-    grid_y = np.arange(0, n_nodes_height, 1, dtype=float)
+    grid_x = np.arange(0, n_nodes_width*cell_size, 1, dtype=float)
+    grid_y = np.arange(0, n_nodes_height*cell_size, 1, dtype=float)
 
     # Ordinary Kriging
     OK = OrdinaryKriging(
