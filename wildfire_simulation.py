@@ -52,7 +52,8 @@ class GuiHandler:
             'probability': float(self.probability_entry.get()),
             'wind_speed_x': float(self.wind_speed_x_entry.get()),
             'wind_speed_y': float(self.wind_speed_y_entry.get()),
-            'fire_starting_position': [x for x in self.fire_starting_position_entry.get().split(';')]
+            'fire_starting_position': [x for x in self.fire_starting_position_entry.get().split(';')],
+            'heights': self.get_height_entries()
         }
         # TODO: Select file path for yaml. Might use asksaveasfile method from tkinter.
         with open("config.yaml", 'w') as file:
@@ -81,10 +82,6 @@ class GuiHandler:
         self.ax.lines[len(self.ax.lines) -1].remove()
         self.ax.axvline(x=self.current_step,color='black',linestyle='--')
         self.canvas_plot.draw()
-
-    def update_map_visualization(self):
-        forest_map = get_forest_map(map_path=Path(self.path_entry.get()), max_axis_length=self.max_axis_length)
-        #  visualize_fire(forest_map, canvas)
 
     def select_file(self):
         file_path = tk.filedialog.askopenfilename(
@@ -115,6 +112,16 @@ class GuiHandler:
         self.wind_speed_y_entry.insert(0, config['wind_speed_y'])
         self.fire_starting_position_entry.delete(0, tk.END)
         self.fire_starting_position_entry.insert(0, ';'.join(config['fire_starting_position']))
+        for height_entry in config['heights']:
+            self.add_height_entry()
+            self.height_entries[-1].x_entry.delete(0, tk.END)
+            self.height_entries[-1].x_entry.insert(0, height_entry[0])
+
+            self.height_entries[-1].y_entry.delete(0, tk.END)
+            self.height_entries[-1].y_entry.insert(0, height_entry[1])
+
+            self.height_entries[-1].h_entry.delete(0, tk.END)
+            self.height_entries[-1].h_entry.insert(0, height_entry[2])
 
     def read_config_variables_to_class_entries(self):
         self.map_picture_path = Path(self.path_entry.get())
@@ -125,6 +132,7 @@ class GuiHandler:
         self.wind_speed_x = self.wind_speed_x_entry.get()
         self.wind_speed_y = self.wind_speed_y_entry.get()
         self.fire_starting_position = [int(x) for x in self.fire_starting_position_entry.get().split(';')]
+        self.heights = self.get_height_entries()
 
     def validate_config_entries(self):
         # TODO
@@ -138,11 +146,10 @@ class GuiHandler:
         if file_path:
             self.config_path = Path(file_path)
             self.update_config_entries_from_config_path()
-            self.update_map_visualization()
 
     def run_calculation(self):
         self.read_config_variables_to_class_entries()
-        forest_map = get_forest_map(map_path=self.map_picture_path, max_axis_length=self.max_axis_length)
+        forest_map = get_forest_map(map_path=self.map_picture_path, max_axis_length=self.max_axis_length, heights=self.heights)
         prob_crown, prob_ground = calculate_probability()
 
         forest_map[self.fire_starting_position[0]][self.fire_starting_position[1]].status = NodeStatus.LOWER_BURNING
@@ -255,11 +262,12 @@ class GuiHandler:
         entry.destroy()
         self.height_entries.remove(entry)
 
-    def read_height_entries(self):
-        # TODO: Use this function
+    def get_height_entries(self):
         return [[entry.x_entry.get(), entry.y_entry.get(), entry.h_entry.get()] for entry in self.height_entries]
 
     def show_forest_map_preview(self):
+        # get_forest_map
+        heights = self.get_height_entries()
         self.axes_preview[0].plot([1, 2, 3], [1, 4, 9])
         self.axes_preview[0].set_title("Heights")
         self.axes_preview[1].plot([1, 2, 3], [1, 2, 3])
@@ -284,6 +292,7 @@ class GuiHandler:
         self.wind_speed_y = None
         self.map_picture_path = None
         self.fire_starting_position = None
+        self.heights = None
 
         # Root window
         log("Init pre-processing GUI...")
@@ -344,7 +353,6 @@ class GuiHandler:
         fire_starting_position_label.grid(row=7, column=0, padx=10, pady=10)
         self.fire_starting_position_entry = tk.Entry(tab_preprocessing, width=10)
         self.fire_starting_position_entry.grid(row=7, column=1, padx=10, pady=10)
-        self.update_config_entries_from_config_path()
 
         save_config_button = tk.Button(tab_preprocessing, text="Save Config as...", command=self.save_entries_to_config)
         save_config_button.grid(row=8, column=0, padx=10, pady=10)
@@ -371,8 +379,8 @@ class GuiHandler:
         self.add_height_entry_button = tk.Button(self.heights_frame, text="Add height entry", command=self.add_height_entry)
         self.add_height_entry_button.pack()
         self.last_free_row = 12
-        self.add_height_entry()
 
+        self.update_config_entries_from_config_path()
         # Preview tab
         show_preview_button = tk.Button(tab_preview, text="Show map preview", command=self.show_forest_map_preview)
         show_preview_button.pack(anchor=tk.NW)

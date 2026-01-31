@@ -1,6 +1,16 @@
 fire_starting_position:
 - '15'
 - '30'
+heights:
+- - '10'
+  - '10'
+  - '30'
+- - '20'
+  - '40'
+  - '60'
+- - '50'
+  - '50'
+  - '20'
 max_axis_length: 100.0
 path: map_pictures/osm_map.png
 probability: 40.0

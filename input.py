@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 from pykrige.ok import OrdinaryKriging
 
-def get_forest_map(map_path: Path = None, max_axis_length: int = 200) -> List[List[MapNode]]:
+def get_forest_map(map_path: Path = None, max_axis_length: int = 200, heights: list[list[int]] = [[1,1,1]]) -> List[List[MapNode]]:
     """
     Return a 2D forest map of a given map picture.
     :param map_path:
@@ -40,11 +40,9 @@ def get_forest_map(map_path: Path = None, max_axis_length: int = 200) -> List[Li
     [l_forest, u_forest, v_forest] = forest_color[0], forest_color[1], forest_color[2]
 
     # Example height datapoints
-    # TODO: Input height datapoints
-    data_heights_x = np.array([10, 20, grid_width-1, 80], dtype=float)
-    data_heights_y = np.array([10, 60, grid_height-1, 75], dtype=float)
-    data_heights = np.array([100, 50, 200, 20], dtype=float)
-
+    data_heights_x = np.array([dataset[0] for dataset in heights])
+    data_heights_y = np.array([dataset[1] for dataset in heights])
+    data_heights = np.array([dataset[2] for dataset in heights])
     # Grid for interpolation
     grid_x = np.arange(0, grid_width, 1, dtype=float)
     grid_y = np.arange(0, grid_height, 1, dtype=float)
@@ -99,9 +97,3 @@ def get_forest_color_luv() -> List[int]:
 
     l, u, v = forest_image[0, 0]
     return [l, u, v]
-
-
-if __name__ == "__main__":
-    # Just for debug purposes
-    map_path = Path().cwd() / 'map_pictures' / 'osm_map.png'
-    get_forest_map(map_path = map_path)
