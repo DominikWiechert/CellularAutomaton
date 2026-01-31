@@ -9,11 +9,12 @@ import cv2
 import numpy as np
 from pykrige.ok import OrdinaryKriging
 
-def get_forest_map(map_path: Path = None, max_axis_length: int = 200, heights: list[list[int]] = [[1,1,1]]) -> List[List[MapNode]]:
+def get_forest_map(map_path: Path = None, nodes_per_axis: int = 200, axis_length: float = None, heights: list[list[float]] = [[1,1,1]]) -> List[List[MapNode]]:
     """
     Return a 2D forest map of a given map picture.
+    :param axis_length:
     :param map_path:
-    :param max_axis_length:
+    :param nodes_per_axis:
     :return: 2D array
         forest_map[x][y]
                x (width)
@@ -29,23 +30,25 @@ def get_forest_map(map_path: Path = None, max_axis_length: int = 200, heights: l
     size = input_image.shape
     ratio = size[1] / size[0]
     if size[1] > size[0]:
-        grid_width = max_axis_length
-        grid_height = int(grid_width / ratio)
+        n_nodes_width = nodes_per_axis
+        n_nodes_height = int(n_nodes_width / ratio)
     else:
-        grid_height = max_axis_length
-        grid_width = int(ratio * grid_height)
-    input_image = cv2.resize(input_image,(grid_width, grid_height))
+        n_nodes_height = nodes_per_axis
+        n_nodes_width = int(ratio * n_nodes_height)
+
+    input_image = cv2.resize(input_image,(n_nodes_width, n_nodes_height))
     input_image = cv2.cvtColor(input_image, cv2.COLOR_BGR2Luv)
     forest_color = get_forest_color_luv()
     [l_forest, u_forest, v_forest] = forest_color[0], forest_color[1], forest_color[2]
 
-    # Example height datapoints
-    data_heights_x = np.array([dataset[0] for dataset in heights])
-    data_heights_y = np.array([dataset[1] for dataset in heights])
-    data_heights = np.array([dataset[2] for dataset in heights])
+    cell_size = axis_length / nodes_per_axis
+    data_heights_x = np.array([float(float(dataset[0]) / cell_size) for dataset in heights])
+    data_heights_y = np.array([float(float(dataset[1]) / cell_size) for dataset in heights])
+    data_heights = np.array([float(dataset[2]) for dataset in heights])
+
     # Grid for interpolation
-    grid_x = np.arange(0, grid_width, 1, dtype=float)
-    grid_y = np.arange(0, grid_height, 1, dtype=float)
+    grid_x = np.arange(0, n_nodes_width, 1, dtype=float)
+    grid_y = np.arange(0, n_nodes_height, 1, dtype=float)
 
     # Ordinary Kriging
     OK = OrdinaryKriging(
@@ -86,7 +89,6 @@ def get_forest_map(map_path: Path = None, max_axis_length: int = 200, heights: l
                 row.append(MapNode(land_use=LandUse.MISC, height=pixel_height))
         output_grid.append(row)
     return output_grid
-
 
 def get_forest_color_luv() -> List[int]:
     forest_image_path = Path().cwd() / 'map_pictures' / 'only_forest.png'

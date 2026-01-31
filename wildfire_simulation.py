@@ -21,17 +21,17 @@ except Exception:
 class HeightEntry(tk.Frame):
     def __init__(self, root, remove_command):
         super().__init__(root)
-        x_label = tk.Label(self, text="x:")
+        x_label = tk.Label(self, text="x [m]:")
         x_label.grid(row=0, column=0, padx=2)
         self.x_entry = tk.Entry(self)
         self.x_entry.grid(row=0, column=1, padx=2)
 
-        y_label = tk.Label(self, text="y:")
+        y_label = tk.Label(self, text="y [m]:")
         y_label.grid(row=1, column=0, padx=2)
         self.y_entry = tk.Entry(self)
         self.y_entry.grid(row=1, column=1, padx=2)
 
-        h_label = tk.Label(self, text="height:")
+        h_label = tk.Label(self, text="height [m]:")
         h_label.grid(row=2, column=0, padx=2)
         self.h_entry = tk.Entry(self)
         self.h_entry.grid(row=2, column=1, padx=2)
@@ -48,7 +48,8 @@ class GuiHandler:
             'path': str(self.path_entry.get()),
             't_max': int(self.t_max_entry.get()),
             'tick_speed': float(self.tick_speed_entry.get()),
-            'max_axis_length': float(self.max_axis_length_entry.get()),
+            'nodes_per_axis': float(self.nodes_per_axis_entry.get()),
+            'axis_length': float(self.axis_length_entry.get()),
             'probability': float(self.probability_entry.get()),
             'wind_speed_x': float(self.wind_speed_x_entry.get()),
             'wind_speed_y': float(self.wind_speed_y_entry.get()),
@@ -96,38 +97,33 @@ class GuiHandler:
     def update_config_entries_from_config_path(self):
         with open(self.config_path, 'r') as file:
             config = yaml.safe_load(file)
-        self.path_entry.delete(0, tk.END)
-        self.path_entry.insert(0, config['path'])
-        self.t_max_entry.delete(0, tk.END)
-        self.t_max_entry.insert(0, config['t_max'])
-        self.tick_speed_entry.delete(0, tk.END)
-        self.tick_speed_entry.insert(0, config['tick_speed'])
-        self.max_axis_length_entry.delete(0, tk.END)
-        self.max_axis_length_entry.insert(0, config['max_axis_length'])
-        self.probability_entry.delete(0, tk.END)
-        self.probability_entry.insert(0, config['probability'])
-        self.wind_speed_x_entry.delete(0, tk.END)
-        self.wind_speed_x_entry.insert(0, config['wind_speed_x'])
-        self.wind_speed_y_entry.delete(0, tk.END)
-        self.wind_speed_y_entry.insert(0, config['wind_speed_y'])
-        self.fire_starting_position_entry.delete(0, tk.END)
-        self.fire_starting_position_entry.insert(0, ';'.join(config['fire_starting_position']))
+
+        def insert_value_in_entry(value, entry: tk.Entry):
+            entry.delete(0, tk.END)
+            entry.insert(0, value)
+
+        insert_value_in_entry(config['path'], self.path_entry)
+        insert_value_in_entry(config['t_max'], self.t_max_entry)
+        insert_value_in_entry(config['tick_speed'], self.tick_speed_entry)
+        insert_value_in_entry(config['nodes_per_axis'], self.nodes_per_axis_entry)
+        insert_value_in_entry(config['axis_length'], self.axis_length_entry)
+        insert_value_in_entry(config['probability'], self.probability_entry)
+        insert_value_in_entry(config['wind_speed_x'], self.wind_speed_x_entry)
+        insert_value_in_entry(config['wind_speed_y'], self.wind_speed_y_entry)
+        insert_value_in_entry(';'.join(config['fire_starting_position']), self.fire_starting_position_entry)
+
         for height_entry in config['heights']:
             self.add_height_entry()
-            self.height_entries[-1].x_entry.delete(0, tk.END)
-            self.height_entries[-1].x_entry.insert(0, height_entry[0])
-
-            self.height_entries[-1].y_entry.delete(0, tk.END)
-            self.height_entries[-1].y_entry.insert(0, height_entry[1])
-
-            self.height_entries[-1].h_entry.delete(0, tk.END)
-            self.height_entries[-1].h_entry.insert(0, height_entry[2])
+            insert_value_in_entry(height_entry[0], self.height_entries[-1].x_entry)
+            insert_value_in_entry(height_entry[1], self.height_entries[-1].y_entry)
+            insert_value_in_entry(height_entry[2], self.height_entries[-1].h_entry)
 
     def read_config_variables_to_class_entries(self):
         self.map_picture_path = Path(self.path_entry.get())
         self.t_max = int(float(self.t_max_entry.get()))
         self.tick_speed = int(float(self.tick_speed_entry.get()))
-        self.max_axis_length = int(float(self.max_axis_length_entry.get()))
+        self.nodes_per_axis = int(float(self.nodes_per_axis_entry.get()))
+        self.axis_length = int(float(self.axis_length_entry.get()))
         self.probability = self.probability_entry.get()
         self.wind_speed_x = self.wind_speed_x_entry.get()
         self.wind_speed_y = self.wind_speed_y_entry.get()
@@ -149,7 +145,7 @@ class GuiHandler:
 
     def run_calculation(self):
         self.read_config_variables_to_class_entries()
-        forest_map = get_forest_map(map_path=self.map_picture_path, max_axis_length=self.max_axis_length, heights=self.heights)
+        forest_map = get_forest_map(map_path=self.map_picture_path, nodes_per_axis=self.nodes_per_axis, axis_length=self.axis_length, heights=self.heights)
         prob_crown, prob_ground = calculate_probability()
 
         forest_map[self.fire_starting_position[0]][self.fire_starting_position[1]].status = NodeStatus.LOWER_BURNING
@@ -165,7 +161,8 @@ class GuiHandler:
         for t in range(1, self.t_max + 1):
             log("Step: " + str(t))
             self.prog_label.config(text=f"Simulating {t}/{self.t_max}")
-            forest_map = run_simulation_step(forest_map, prob_crown, prob_ground)
+            cell_size = self.axis_length / self.nodes_per_axis
+            forest_map = run_simulation_step(forest_map, prob_crown, prob_ground, cell_size)
             self.forest_map_simplified[:, :, t] = simplify_forest_map(forest_map)
             self.timeline[0, t] = t
             self.timeline[1:7, t] = count_cells(self.forest_map_simplified[:, :, t])[:, 0]
@@ -266,7 +263,10 @@ class GuiHandler:
         return [[entry.x_entry.get(), entry.y_entry.get(), entry.h_entry.get()] for entry in self.height_entries]
 
     def show_forest_map_preview(self):
-        # get_forest_map
+        self.read_config_variables_to_class_entries()
+        self.fig_preview.clear()
+        forest_map = get_forest_map(map_path=self.map_picture_path, nodes_per_axis=self.nodes_per_axis,
+                                    axis_length=self.axis_length, heights=self.heights)
         heights = self.get_height_entries()
         self.axes_preview[0].plot([1, 2, 3], [1, 4, 9])
         self.axes_preview[0].set_title("Heights")
@@ -286,7 +286,8 @@ class GuiHandler:
         self.cell_width = 1
         self.cell_height = 1
         self.config_path = Path('config.yaml')
-        self.max_axis_length = None
+        self.nodes_per_axis = None
+        self.axis_length = None
         self.probability = None
         self.wind_speed_x = None
         self.wind_speed_y = None
@@ -329,58 +330,64 @@ class GuiHandler:
         self.tick_speed_entry = tk.Entry(tab_preprocessing, width=10)
         self.tick_speed_entry.grid(row=2, column=1, columnspan=1, sticky="we", padx=10, pady=10)
 
-        max_axis_length_label = tk.Label(tab_preprocessing, text="max_axis_length:")
-        max_axis_length_label.grid(row=3, column=0, padx=10, pady=10)
-        self.max_axis_length_entry = tk.Entry(tab_preprocessing, width=10)
-        self.max_axis_length_entry.grid(row=3, column=1, columnspan=1, sticky="we", padx=10, pady=10)
+        nodes_per_axis_label = tk.Label(tab_preprocessing, text="Number of cells per row [n]:")
+        nodes_per_axis_label.grid(row=3, column=0, padx=10, pady=10)
+        self.nodes_per_axis_entry = tk.Entry(tab_preprocessing, width=10)
+        self.nodes_per_axis_entry.grid(row=3, column=1, columnspan=1, sticky="we", padx=10, pady=10)
+
+        axis_length_label = tk.Label(tab_preprocessing, text="Width of map [m]:")
+        axis_length_label.grid(row=4, column=0, padx=10, pady=10)
+        self.axis_length_entry = tk.Entry(tab_preprocessing, width=10)
+        self.axis_length_entry.grid(row=4, column=1, columnspan=1, sticky="we", padx=10, pady=10)
 
         probability_label = tk.Label(tab_preprocessing, text="probability:")
-        probability_label.grid(row=4, column=0, padx=10, pady=10)
+        probability_label.grid(row=5, column=0, padx=10, pady=10)
         self.probability_entry = tk.Entry(tab_preprocessing, width=10)
-        self.probability_entry.grid(row=4, column=1, columnspan=1, sticky="we", padx=10, pady=10)
+        self.probability_entry.grid(row=5, column=1, columnspan=1, sticky="we", padx=10, pady=10)
 
-        wind_speed_x_label = tk.Label(tab_preprocessing, text="wind_speed_x:")
-        wind_speed_x_label.grid(row=5, column=0, padx=10, pady=10)
+        wind_speed_x_label = tk.Label(tab_preprocessing, text="Wind speed x-direction [m/s]:")
+        wind_speed_x_label.grid(row=6, column=0, padx=10, pady=10)
         self.wind_speed_x_entry = tk.Entry(tab_preprocessing, width=10)
-        self.wind_speed_x_entry.grid(row=5, column=1, columnspan=1, sticky="we", padx=10, pady=10)
+        self.wind_speed_x_entry.grid(row=6, column=1, columnspan=1, sticky="we", padx=10, pady=10)
 
-        wind_speed_y_label = tk.Label(tab_preprocessing, text="wind_speed_y:")
-        wind_speed_y_label.grid(row=6, column=0, padx=10, pady=10)
+        wind_speed_y_label = tk.Label(tab_preprocessing, text="Wind speed y-direction [m/s]::")
+        wind_speed_y_label.grid(row=7, column=0, padx=10, pady=10)
         self.wind_speed_y_entry = tk.Entry(tab_preprocessing, width=10)
-        self.wind_speed_y_entry.grid(row=6, column=1, columnspan=1, sticky="we", padx=10, pady=10)
+        self.wind_speed_y_entry.grid(row=7, column=1, columnspan=1, sticky="we", padx=10, pady=10)
 
-        fire_starting_position_label = tk.Label(tab_preprocessing, text="Fire starting position 'xx;yy':")
-        fire_starting_position_label.grid(row=7, column=0, padx=10, pady=10)
+        fire_starting_position_label = tk.Label(tab_preprocessing, text="Fire starting position 'xx;yy' [m]:")
+        fire_starting_position_label.grid(row=8, column=0, padx=10, pady=10)
         self.fire_starting_position_entry = tk.Entry(tab_preprocessing, width=10)
-        self.fire_starting_position_entry.grid(row=7, column=1, padx=10, pady=10)
+        self.fire_starting_position_entry.grid(row=8, column=1, padx=10, pady=10)
 
         save_config_button = tk.Button(tab_preprocessing, text="Save Config as...", command=self.save_entries_to_config)
-        save_config_button.grid(row=8, column=0, padx=10, pady=10)
+        save_config_button.grid(row=9, column=0, padx=10, pady=10)
 
         load_config_button = tk.Button(tab_preprocessing, text="Load Config", command=self.load_config_from_file)
-        load_config_button.grid(row=8, column=1, padx=10, pady=10)
+        load_config_button.grid(row=9, column=1, padx=10, pady=10)
 
         calculate_button = tk.Button(tab_preprocessing, text="Run calculation", command=self.run_calculation)
-        calculate_button.grid(row=8, column=2, padx=10, pady=10)
+        calculate_button.grid(row=9, column=2, padx=10, pady=10)
 
         load_post_pros_button = tk.Button(tab_preprocessing, text="Load calculation", command=self.load_post_pros)
-        load_post_pros_button.grid(row=8, column=3, padx=10, pady=10)
+        load_post_pros_button.grid(row=9, column=3, padx=10, pady=10)
 
         pbar_label = tk.Label(tab_preprocessing, text="Progress:")
-        pbar_label.grid(row=9, column=0, padx=10, pady=10)
+        pbar_label.grid(row=10, column=0, padx=10, pady=10)
         self.pbar = ttk.Progressbar(tab_preprocessing, orient="horizontal", length=100, mode='determinate')
-        self.pbar.grid(row=9, column=1, sticky="we", columnspan=3, padx=10, pady=10)
+        self.pbar.grid(row=10, column=1, sticky="we", columnspan=3, padx=10, pady=10)
         self.prog_label = tk.Label(tab_preprocessing, text="")
-        self.prog_label.grid(row=10, column=1, columnspan=3, padx=10, pady=10)
+        self.prog_label.grid(row=11, column=1, columnspan=3, padx=10, pady=10)
 
         self.height_entries = []
         self.heights_frame = tk.Frame(tab_preprocessing)
-        self.heights_frame.grid(row=11, column=0, padx=10, pady=10)
+        self.heights_frame.grid(row=12, column=0, padx=10, pady=10)
         self.add_height_entry_button = tk.Button(self.heights_frame, text="Add height entry", command=self.add_height_entry)
         self.add_height_entry_button.pack()
-        self.last_free_row = 12
+        self.last_free_row = 13
 
         self.update_config_entries_from_config_path()
+
         # Preview tab
         show_preview_button = tk.Button(tab_preview, text="Show map preview", command=self.show_forest_map_preview)
         show_preview_button.pack(anchor=tk.NW)

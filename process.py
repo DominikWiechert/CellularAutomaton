@@ -47,8 +47,7 @@ def calc_incl(h_local,h_neighbor,abst):
     abst = 5 #TODO: calculate distance of tiles
     return ((np.arcsin((h_neighbor-h_local)/abst) + 90) / 90)
 
-
-def run_simulation_step(forest_map: List[List[MapNode]],probability_crown,probability_ground: float) -> List[List[MapNode]]:
+def run_simulation_step(forest_map: List[List[MapNode]], probability_crown, probability_ground: float, distance: float) -> List[List[MapNode]]:
     forest_map_temp = forest_map.copy()
     for k in range(len(forest_map)):
         for l in range(len(forest_map[0])):
