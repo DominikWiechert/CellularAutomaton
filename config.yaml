@@ -1,7 +1,7 @@
 axis_length: 2000.0
 fire_starting_position:
-- '15'
-- '30'
+- '100'
+- '100'
 heights:
 - - '100'
   - '100'

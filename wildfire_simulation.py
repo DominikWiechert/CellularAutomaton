@@ -105,7 +105,7 @@ class GuiHandler:
         insert_value_in_entry(config['path'], self.path_entry)
         insert_value_in_entry(config['t_max'], self.t_max_entry)
         insert_value_in_entry(config['tick_speed'], self.tick_speed_entry)
-        insert_value_in_entry(config['nodes_per_axis'], self.nodes_per_axis_entry)
+        insert_value_in_entry(int(config['nodes_per_axis']), self.nodes_per_axis_entry)
         insert_value_in_entry(config['axis_length'], self.axis_length_entry)
         insert_value_in_entry(config['probability'], self.probability_entry)
         insert_value_in_entry(config['wind_speed_x'], self.wind_speed_x_entry)
@@ -148,7 +148,10 @@ class GuiHandler:
         forest_map = get_forest_map(map_path=self.map_picture_path, nodes_per_axis=self.nodes_per_axis, axis_length=self.axis_length, heights=self.heights)
         prob_crown, prob_ground = calculate_probability()
 
-        forest_map[self.fire_starting_position[0]][self.fire_starting_position[1]].status = NodeStatus.LOWER_BURNING
+        cell_size = self.axis_length / self.nodes_per_axis
+        fire_start_x = int(self.fire_starting_position[0] / cell_size)
+        fire_start_y = int(self.fire_starting_position[1] / cell_size)
+        forest_map[fire_start_x][fire_start_y].status = NodeStatus.LOWER_BURNING
 
         precent_step = 50 / self.t_max
 
