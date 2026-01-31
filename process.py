@@ -29,10 +29,10 @@ def calculate_probability():
         log("Standard probability config file created")
     probability = Probability(config["probability"])
 
-    probability.east = probability.base * (1 + config["wind_speed_x"]/wind_v_max)
-    probability.west = probability.base * (1 - config["wind_speed_x"]/wind_v_max)
-    probability.north = probability.base * (1 + config["wind_speed_y"]/wind_v_max)
-    probability.south = probability.base * (1 - config["wind_speed_y"]/wind_v_max)
+    probability.north = probability.base * (1 + config["wind_speed_x"]/wind_v_max)
+    probability.south = probability.base * (1 - config["wind_speed_x"]/wind_v_max)
+    probability.west = probability.base * (1 + config["wind_speed_y"]/wind_v_max)
+    probability.east = probability.base * (1 - config["wind_speed_y"]/wind_v_max)
 
     log("Probability calculated")
     log("Spread prob. east: " + str(probability.east))
