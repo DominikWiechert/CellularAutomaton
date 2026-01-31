@@ -9,7 +9,7 @@ from tkinter import filedialog, ttk,messagebox
 import sv_ttk
 
 from input import get_forest_map
-from output import visualize_fire, simplified_visualize_fire, render_optimised_forward,render_optimised_backward
+from output import simplified_visualize_fire, render_optimised_forward,render_optimised_backward
 from process import run_simulation_step, log, calculate_probability, simplify_forest_map, count_cells, optimised_render
 from custom_datatypes import NodeStatus
 
@@ -194,7 +194,7 @@ class GuiHandler:
 
         self.canvas_plot.get_tk_widget().grid(row=0, column=21, columnspan=10, sticky='e')
         self.plot()
-        simplified_visualize_fire(self.forest_map_simplified[:, :, 0], self.canvas_automat)
+        simplified_visualize_fire(np.transpose(self.forest_map_simplified[:, :, 0]), self.canvas_automat)
 
     def load_post_pros(self):
         # TODO: tbi
@@ -222,13 +222,13 @@ class GuiHandler:
     def first_button(self):
         self.current_step = 0
         log("Step: " + str(self.current_step))
-        simplified_visualize_fire(self.forest_map_simplified[:,:,self.current_step], self.canvas_automat)
+        simplified_visualize_fire(np.transpose(self.forest_map_simplified[:,:,self.current_step]), self.canvas_automat)
         self.plot_position()
 
     def last_button(self):
         self.current_step = self.t_max
         log("Step: " + str(self.current_step))
-        simplified_visualize_fire(self.forest_map_simplified[:,:,self.current_step], self.canvas_automat)
+        simplified_visualize_fire(np.transpose(self.forest_map_simplified[:,:,self.current_step]), self.canvas_automat)
         self.plot_position()
 
     def play_button(self):

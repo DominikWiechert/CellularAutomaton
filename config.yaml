@@ -14,7 +14,7 @@ heights:
 max_axis_length: 100.0
 path: map_pictures/osm_map.png
 probability: 40.0
-t_max: 150
+t_max: 50
 tick_speed: 400.0
 wind_speed_x: -80.0
 wind_speed_y: -50.0
