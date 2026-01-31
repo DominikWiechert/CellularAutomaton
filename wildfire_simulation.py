@@ -264,15 +264,9 @@ class GuiHandler:
 
     def show_forest_map_preview(self):
         self.read_config_variables_to_class_entries()
-        self.fig_preview.clear()
-        forest_map = get_forest_map(map_path=self.map_picture_path, nodes_per_axis=self.nodes_per_axis,
-                                    axis_length=self.axis_length, heights=self.heights)
-        heights = self.get_height_entries()
-        self.axes_preview[0].plot([1, 2, 3], [1, 4, 9])
-        self.axes_preview[0].set_title("Heights")
-        self.axes_preview[1].plot([1, 2, 3], [1, 2, 3])
-        self.axes_preview[1].set_title("Terrain types")
-        self.canvas_plot_preview.draw()
+        get_forest_map(map_path=self.map_picture_path, nodes_per_axis=self.nodes_per_axis,
+                       axis_length=self.axis_length, heights=self.heights, show_height_graph=True)
+
     
     def __init__(self):
         # Variables
@@ -303,11 +297,9 @@ class GuiHandler:
         self.notebook = ttk.Notebook(self.root)
 
         tab_preprocessing = ttk.Frame(self.notebook)
-        tab_preview = ttk.Frame(self.notebook)
         self.tab_post = ttk.Frame(self.notebook)
 
         self.notebook.add(tab_preprocessing, text="Pre-Processing")
-        self.notebook.add(tab_preview, text="Map preview")
         self.notebook.add(self.tab_post, text="Processing")
         self.notebook.pack(expand=1, fill='both')
 
@@ -384,17 +376,13 @@ class GuiHandler:
         self.heights_frame.grid(row=12, column=0, padx=10, pady=10)
         self.add_height_entry_button = tk.Button(self.heights_frame, text="Add height entry", command=self.add_height_entry)
         self.add_height_entry_button.pack()
+        show_preview_button = tk.Button(self.heights_frame, text="Show map preview", command=self.show_forest_map_preview)
+        show_preview_button.pack()
         self.last_free_row = 13
 
         self.update_config_entries_from_config_path()
 
-        # Preview tab
-        show_preview_button = tk.Button(tab_preview, text="Show map preview", command=self.show_forest_map_preview)
-        show_preview_button.pack(anchor=tk.NW)
-        self.fig_preview, self.axes_preview = plt.subplots(1,2)
-        self.canvas_plot_preview = FigureCanvasTkAgg(self.fig_preview, master=tab_preview)
-        self.canvas_plot_preview.get_tk_widget().pack()
-        
+
         # Postprocessing tab
         self.fig, self.ax = plt.subplots()
 

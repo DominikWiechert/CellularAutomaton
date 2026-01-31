@@ -9,9 +9,10 @@ import cv2
 import numpy as np
 from pykrige.ok import OrdinaryKriging
 
-def get_forest_map(map_path: Path = None, nodes_per_axis: int = 200, axis_length: float = None, heights: list[list[float]] = [[1,1,1]]) -> List[List[MapNode]]:
+def get_forest_map(map_path: Path = None, nodes_per_axis: int = 200, axis_length: float = None, heights: list[list[float]] = [[1,1,1]], show_height_graph: bool = False) -> List[List[MapNode]]:
     """
     Return a 2D forest map of a given map picture.
+    :param show_height_graph:
     :param axis_length:
     :param map_path:
     :param nodes_per_axis:
@@ -42,8 +43,8 @@ def get_forest_map(map_path: Path = None, nodes_per_axis: int = 200, axis_length
     [l_forest, u_forest, v_forest] = forest_color[0], forest_color[1], forest_color[2]
 
     cell_size = axis_length / nodes_per_axis
-    data_heights_x = np.array([float(float(dataset[0]) / cell_size) for dataset in heights])
-    data_heights_y = np.array([float(float(dataset[1]) / cell_size) for dataset in heights])
+    data_heights_x = np.array([float(dataset[0]) for dataset in heights])
+    data_heights_y = np.array([float(dataset[1]) for dataset in heights])
     data_heights = np.array([float(dataset[2]) for dataset in heights])
 
     # Grid for interpolation
@@ -63,7 +64,6 @@ def get_forest_map(map_path: Path = None, nodes_per_axis: int = 200, axis_length
     # Interpolation
     interpolated_heights, ss = OK.execute('grid', grid_x, grid_y)
 
-    show_height_graph = False
     if show_height_graph:
         plt.figure(figsize=(6, 5))
         plt.contourf(grid_x, grid_y, interpolated_heights, cmap='viridis')
@@ -78,7 +78,9 @@ def get_forest_map(map_path: Path = None, nodes_per_axis: int = 200, axis_length
     for i_height in range(input_image.shape[0]):
         row = []
         for i_width in range(input_image.shape[1]):
-            pixel_height = interpolated_heights[i_height][i_width]
+            position_width = int(i_width * cell_size)
+            position_height = int(i_height * cell_size)
+            pixel_height = interpolated_heights[position_width][position_height]
             l_pixel, u_pixel, v_pixel = input_image[i_height, i_width]
             d_pixel2forest = math.sqrt((int(l_pixel) - int(l_forest))**2 +
                                        (int(u_pixel) - int(u_forest))**2 +
