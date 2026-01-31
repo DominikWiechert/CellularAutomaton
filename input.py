@@ -66,12 +66,12 @@ def get_forest_map(map_path: Path = None, nodes_per_axis: int = 200, axis_length
 
     if show_height_graph:
         plt.figure(figsize=(6, 5))
-        plt.contourf(grid_x, grid_y, interpolated_heights, cmap='viridis')
-        plt.scatter(data_heights_x, data_heights_y, c=data_heights, edgecolor='k', cmap='viridis')
-        plt.colorbar(label='Interpolierte Höhe')
-        plt.title("Ordinary Kriging – Interpolated Heights")
-        plt.xlabel("x")
-        plt.ylabel("y")
+        plt.contourf(grid_y, -grid_x, interpolated_heights, cmap='viridis')
+        plt.scatter(data_heights_y, -data_heights_x, c=data_heights, edgecolor='k', cmap='viridis')
+        plt.colorbar(label='Interpolated Heights [m]')
+        plt.title("Interpolated Heights")
+        plt.xlabel("y")
+        plt.ylabel("x")
         plt.show()
 
     output_grid = []

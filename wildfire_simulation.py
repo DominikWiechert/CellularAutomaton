@@ -269,7 +269,6 @@ class GuiHandler:
         self.read_config_variables_to_class_entries()
         get_forest_map(map_path=self.map_picture_path, nodes_per_axis=self.nodes_per_axis,
                        axis_length=self.axis_length, heights=self.heights, show_height_graph=True)
-
     
     def __init__(self):
         # Variables
@@ -384,7 +383,6 @@ class GuiHandler:
         self.last_free_row = 13
 
         self.update_config_entries_from_config_path()
-
 
         # Postprocessing tab
         self.fig, self.ax = plt.subplots()
