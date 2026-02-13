@@ -44,6 +44,8 @@ class HeightEntry(tk.Frame):
 
 class GuiHandler:
     def save_entries_to_config(self):
+        if not self.validate_all_entries():
+            return
         config_path = filedialog.asksaveasfilename(
             defaultextension=".yaml",
             filetypes = (("YAML File", "*.yaml"), ("All files", "*.*"))
@@ -53,8 +55,8 @@ class GuiHandler:
 
         config_data = {
             'path': str(self.path_entry.get()),
-            't_max': int(self.t_max_entry.get()),
-            'tick_speed': float(self.tick_speed_entry.get()),
+            't_max': int(float(self.t_max_entry.get())),
+            'tick_speed': int(float(self.tick_speed_entry.get())),
             'nodes_per_axis': float(self.nodes_per_axis_entry.get()),
             'axis_length': float(self.axis_length_entry.get()),
             'probability': float(self.probability_entry.get()),
@@ -67,39 +69,6 @@ class GuiHandler:
         with open(config_path, 'w') as file:
             yaml.dump(config_data, file)
         log(f'Data saved to {config_path}')
-
-    def slider_changed(self, event):
-        self.slider_label.config(text = f'tick speed = {int(self.slider.get()):04} ms')
-        self.tick_speed = int(self.slider.get())
-
-    def plot(self):
-        self.ax.clear()
-        x = self.timeline[0,:]
-        self.ax.set_ylabel("number of cells [1]")
-        self.ax.set_xlabel("time steps [1]")
-        self.ax.plot(x, self.timeline[1,:], color='green', label='Tree')
-        self.ax.plot(x, self.timeline[2,:], color='red', label='Crown burning')
-        self.ax.plot(x, self.timeline[3, :], color='black', label='Burned down')
-        self.ax.plot(x, self. timeline[5, :], color='orange', label='Lower vegetation burning')
-        self.ax.legend()
-        self.ax.grid(True)
-        self.ax.axvline(x=self.current_step, color='black', linestyle='--')
-        self.canvas_plot.draw()
-
-    def plot_position(self):
-        self.ax.lines[len(self.ax.lines) -1].remove()
-        self.ax.axvline(x=self.current_step,color='black',linestyle='--')
-        self.canvas_plot.draw()
-
-    def select_file(self):
-        file_path = tk.filedialog.askopenfilename(
-            title="Select a file",
-            filetypes=(("PNG Files", "*.png"), ("All files", "*.*"))
-        )
-        if file_path:
-            self.path_entry.delete(0, tk.END)
-            self.path_entry.insert(0, file_path)
-        # update_map_visualization()
 
     def update_config_entries_from_config_path(self):
         with open(self.config_path, 'r') as file:
@@ -140,10 +109,6 @@ class GuiHandler:
         self.fire_starting_position = [int(x) for x in self.fire_starting_position_entry.get().split(';')]
         self.heights = self.get_height_entries()
 
-    def validate_config_entries(self):
-        # TODO
-        pass
-
     def load_config_from_file(self):
         file_path = tk.filedialog.askopenfilename(
             title="Select a file",
@@ -153,14 +118,113 @@ class GuiHandler:
             self.config_path = Path(file_path)
             self.update_config_entries_from_config_path()
 
+    def validate_all_entries(self):
+        def validate_float(value):
+            try:
+                float(value)
+                return True
+            except ValueError:
+                return False
+
+        def validate_int(value):
+            try:
+                int(float(value))
+                return True
+            except ValueError:
+                return False
+
+        def validate_float_greater_than_zero(value, name):
+            if validate_float(value):
+                if float(value) <= 0:
+                    messagebox.showerror("Error", f"{name} must be greater than 0")
+                    return False
+            else:
+                messagebox.showerror("Error", f"{name} is invalid. Make sure it can be cast to float.")
+                return False
+            return True
+
+        def validate_int_greater_than_zero(value, name):
+            if validate_int(value):
+                if int(float(value)) <= 0:
+                    messagebox.showerror("Error", f"{name} must be greater than 0")
+                    return False
+            else:
+                messagebox.showerror("Error", f"{name} is invalid. Make sure it can be cast to integer.")
+                return False
+            return True
+
+        if not validate_int_greater_than_zero(self.t_max_entry.get(), 'Simulation Time'): return False
+        if not validate_int_greater_than_zero(self.tick_speed_entry.get(), 'Tick speed'): return False
+        if not validate_int_greater_than_zero(self.nodes_per_axis_entry.get(), 'Number of cells per row'): return False
+        if not validate_int_greater_than_zero(self.axis_length_entry.get(), 'Width of map'): return False
+        if not validate_float_greater_than_zero(self.probability_entry.get(), 'probability'): return False
+        if not validate_float(self.wind_speed_x_entry.get()):
+            messagebox.showerror("Error", "wind_speed_x is invalid. Make sure it can be cast to float.")
+            return False
+        if not validate_float(self.wind_speed_y_entry.get()):
+            messagebox.showerror("Error", "wind_speed_y is invalid. Make sure it can be cast to float.")
+            return False
+        if len(self.fire_starting_position_entry.get().split(';')) != 2:
+            messagebox.showerror("Error", "Fire starting position is invalid. Make sure you have two values, that are separated by a semicolon ';'.")
+            return False
+
+        for position in self.fire_starting_position_entry.get().split(';'):
+            if not validate_int_greater_than_zero(position, 'fire_starting_position'): return False
+            if int(float(position)) > int(float(self.axis_length_entry.get())):
+                messagebox.showerror("Error", f"Fire starting position {position} cannot be greater than axis length. This data is given in meter.")
+                return False
+
+        for heights in self.get_height_entries():
+            for value in heights:
+                if not validate_float_greater_than_zero(value, 'height value'): return False
+            for position in [heights[0], heights[1]]:
+                if float(position) >= float(self.axis_length_entry.get()):
+                    messagebox.showerror("Error",f"Height position {position} cannot be greater than axis length. This data is given in meter.")
+                    return False
+
+        return True
+
+    def slider_changed(self, event):
+        self.slider_label.config(text = f'tick speed = {int(self.slider.get()):04} ms')
+        self.tick_speed = int(self.slider.get())
+
+    def plot(self):
+        self.ax.clear()
+        x = self.timeline[0,:]
+        self.ax.set_ylabel("number of cells [1]")
+        self.ax.set_xlabel("time steps [1]")
+        self.ax.plot(x, self.timeline[1,:], color='green', label='Tree')
+        self.ax.plot(x, self.timeline[2,:], color='red', label='Crown burning')
+        self.ax.plot(x, self.timeline[3, :], color='black', label='Burned down')
+        self.ax.plot(x, self. timeline[5, :], color='orange', label='Lower vegetation burning')
+        self.ax.legend()
+        self.ax.grid(True)
+        self.ax.axvline(x=self.current_step, color='black', linestyle='--')
+        self.canvas_plot.draw()
+
+    def plot_position(self):
+        self.ax.lines[len(self.ax.lines) -1].remove()
+        self.ax.axvline(x=self.current_step,color='black',linestyle='--')
+        self.canvas_plot.draw()
+
+    def select_file(self):
+        file_path = tk.filedialog.askopenfilename(
+            title="Select a file",
+            filetypes=(("PNG Files", "*.png"), ("All files", "*.*"))
+        )
+        if file_path:
+            self.path_entry.delete(0, tk.END)
+            self.path_entry.insert(0, file_path)
+
     def run_calculation(self):
+        if not self.validate_all_entries(): return
         self.read_config_variables_to_class_entries()
         forest_map = get_forest_map(map_path=self.map_picture_path, nodes_per_axis=self.nodes_per_axis, axis_length=self.axis_length, heights=self.heights)
         prob_crown, prob_ground = calculate_probability()
 
         cell_size = self.axis_length / self.nodes_per_axis
-        fire_start_x = int(self.fire_starting_position[0] / cell_size)
-        fire_start_y = int(self.fire_starting_position[1] / cell_size)
+        fire_start_x = int(self.fire_starting_position[0] / cell_size) - 1
+        fire_start_y = int(self.fire_starting_position[1] / cell_size) - 1
         forest_map[fire_start_x][fire_start_y].status = NodeStatus.LOWER_BURNING
 
         precent_step = 50 / self.t_max
@@ -271,6 +335,10 @@ class GuiHandler:
         self.height_entries.append(entry)
 
     def remove_height_entry(self, entry):
+        if len(self.height_entries) == 1:
+            messagebox.showinfo("Information", "Failed to remove last entry. At least one entry is needed.")
+            return
+
         # Destroy and remove entry
         entry.destroy()
         self.height_entries.remove(entry)
@@ -288,6 +356,7 @@ class GuiHandler:
         return [[entry.x_entry.get(), entry.y_entry.get(), entry.h_entry.get()] for entry in self.height_entries]
 
     def show_forest_map_preview(self):
+        if not self.validate_all_entries(): return
         self.read_config_variables_to_class_entries()
         get_forest_map(map_path=self.map_picture_path, nodes_per_axis=self.nodes_per_axis,
                        axis_length=self.axis_length, heights=self.heights, show_height_graph=True)
