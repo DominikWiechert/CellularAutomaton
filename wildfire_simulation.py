@@ -44,6 +44,13 @@ class HeightEntry(tk.Frame):
 
 class GuiHandler:
     def save_entries_to_config(self):
+        config_path = filedialog.asksaveasfilename(
+            defaultextension=".yaml",
+            filetypes = (("YAML File", "*.yaml"), ("All files", "*.*"))
+        )
+        if not config_path:
+            return
+
         config_data = {
             'path': str(self.path_entry.get()),
             't_max': int(self.t_max_entry.get()),
@@ -56,10 +63,10 @@ class GuiHandler:
             'fire_starting_position': [x for x in self.fire_starting_position_entry.get().split(';')],
             'heights': self.get_height_entries()
         }
-        # TODO: Select file path for yaml. Might use asksaveasfile method from tkinter.
-        with open("config.yaml", 'w') as file:
+
+        with open(config_path, 'w') as file:
             yaml.dump(config_data, file)
-        log('Data saved to config.yaml')
+        log(f'Data saved to {config_path}')
 
     def slider_changed(self, event):
         self.slider_label.config(text = f'tick speed = {int(self.slider.get()):04} ms')
@@ -111,6 +118,9 @@ class GuiHandler:
         insert_value_in_entry(config['wind_speed_x'], self.wind_speed_x_entry)
         insert_value_in_entry(config['wind_speed_y'], self.wind_speed_y_entry)
         insert_value_in_entry(';'.join(config['fire_starting_position']), self.fire_starting_position_entry)
+
+        for i in range(1, len(self.height_entries)):
+            self.height_entries[-1].remove_entry()
 
         for height_entry in config['heights']:
             self.add_height_entry()
@@ -254,13 +264,25 @@ class GuiHandler:
 
     def add_height_entry(self):
         entry = HeightEntry(self.heights_frame, self.remove_height_entry)
-        entry.pack()
-        self.last_free_row += 1
+        i_new_entry = len(self.height_entries)
+        i_row = i_new_entry // self.max_height_entries_per_row
+        i_col = i_new_entry % self.max_height_entries_per_row
+        entry.grid(row=i_row, column=i_col)
         self.height_entries.append(entry)
 
     def remove_height_entry(self, entry):
+        # Destroy and remove entry
         entry.destroy()
         self.height_entries.remove(entry)
+
+        # Rearrange all other entries
+        i_entry=0
+        for entry in self.height_entries:
+            i_row = i_entry // self.max_height_entries_per_row
+            i_col = i_entry % self.max_height_entries_per_row
+            entry.grid_forget()
+            entry.grid(row=i_row, column=i_col)
+            i_entry+=1
 
     def get_height_entries(self):
         return [[entry.x_entry.get(), entry.y_entry.get(), entry.h_entry.get()] for entry in self.height_entries]
@@ -294,14 +316,16 @@ class GuiHandler:
         # Root window
         log("Init pre-processing GUI...")
         self.root = tk.Tk()
-        self.root.title("Wildfire Simulation - Pre-Processing")
-        self.root.geometry("2000x1200")
+        self.root.title("Wildfire Simulation")
+        self.root.state("zoomed")
         self.notebook = ttk.Notebook(self.root)
 
         tab_preprocessing = ttk.Frame(self.notebook)
+        self.tab_height = ttk.Frame(self.notebook)
         self.tab_post = ttk.Frame(self.notebook)
 
         self.notebook.add(tab_preprocessing, text="Pre-Processing")
+        self.notebook.add(self.tab_height, text="Heights")
         self.notebook.add(self.tab_post, text="Processing")
         self.notebook.pack(expand=1, fill='both')
 
@@ -363,9 +387,6 @@ class GuiHandler:
         calculate_button = tk.Button(tab_preprocessing, text="Run calculation", command=self.run_calculation)
         calculate_button.grid(row=9, column=2, padx=10, pady=10)
 
-        load_post_pros_button = tk.Button(tab_preprocessing, text="Load calculation", command=self.load_post_pros)
-        load_post_pros_button.grid(row=9, column=3, padx=10, pady=10)
-
         pbar_label = tk.Label(tab_preprocessing, text="Progress:")
         pbar_label.grid(row=10, column=0, padx=10, pady=10)
         self.pbar = ttk.Progressbar(tab_preprocessing, orient="horizontal", length=100, mode='determinate')
@@ -374,13 +395,13 @@ class GuiHandler:
         self.prog_label.grid(row=11, column=1, columnspan=3, padx=10, pady=10)
 
         self.height_entries = []
-        self.heights_frame = tk.Frame(tab_preprocessing)
-        self.heights_frame.grid(row=12, column=0, padx=10, pady=10)
-        self.add_height_entry_button = tk.Button(self.heights_frame, text="Add height entry", command=self.add_height_entry)
+        self.add_height_entry_button = tk.Button(self.tab_height, text="Add height entry", command=self.add_height_entry)
         self.add_height_entry_button.pack()
-        show_preview_button = tk.Button(self.heights_frame, text="Show map preview", command=self.show_forest_map_preview)
+        show_preview_button = tk.Button(self.tab_height, text="Show map preview", command=self.show_forest_map_preview)
         show_preview_button.pack()
-        self.last_free_row = 13
+        self.max_height_entries_per_row = 5
+        self.heights_frame = tk.Frame(self.tab_height)
+        self.heights_frame.pack()
 
         self.update_config_entries_from_config_path()
 
@@ -400,9 +421,6 @@ class GuiHandler:
         self.b4.grid(row=2, column=11)
         self.b5 = ttk.Button(self.tab_post, text="⏭", command=self.last_button)
         self.b5.grid(row=2, column=12)
-
-        self.root.title("Wildfire - Post-processing")
-        self.root.geometry("2000x1200")
 
         self.canvas_automat.grid(row=0, column=0, columnspan=20)
         self.slider_label.grid(row=1, column=0, sticky='w')

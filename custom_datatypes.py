@@ -2,8 +2,7 @@ from enum import Enum
 
 class LandUse(Enum):
     FOREST = 1
-    STREET = 2
-    MISC = 3
+    MISC = 2
 
 class NodeStatus(Enum):
     INTACT = 1
