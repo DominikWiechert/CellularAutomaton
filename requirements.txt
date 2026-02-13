@@ -3,3 +3,6 @@ opencv-python
 numpy
 pathlib
 pyyaml
+matplotlib
+sv_ttk
+pykrige
