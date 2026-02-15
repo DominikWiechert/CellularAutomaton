@@ -44,7 +44,10 @@ class HeightEntry(tk.Frame):
 
 class GuiHandler:
     def save_entries_to_config(self):
-        if not self.validate_all_entries():
+        """
+        Saves all user defined data in GUI entries to a selected config file.
+        """
+        if not self.are_all_entries_correct():
             return
         config_path = filedialog.asksaveasfilename(
             defaultextension=".yaml",
@@ -71,6 +74,10 @@ class GuiHandler:
         log(f'Data saved to {config_path}')
 
     def update_config_entries_from_config_path(self):
+        """
+         Given a path to a config file, this function updates all GUI entries with data from the config file.
+        """
+        # All entries shall be given in the config file.
         with open(self.config_path, 'r') as file:
             config = yaml.safe_load(file)
 
@@ -98,6 +105,10 @@ class GuiHandler:
             insert_value_in_entry(height_entry[2], self.height_entries[-1].h_entry)
 
     def read_config_variables_to_class_entries(self):
+        """
+        Reads all entries from GUI to attributes of the class GuiHandler. Datatypes are cast accordingly, although
+        no value validation is done.
+        """
         self.map_picture_path = Path(self.path_entry.get())
         self.t_max = int(float(self.t_max_entry.get()))
         self.tick_speed = int(float(self.tick_speed_entry.get()))
@@ -110,6 +121,9 @@ class GuiHandler:
         self.heights = self.get_height_entries()
 
     def load_config_from_file(self):
+        """
+        Ask user for a config file with dialog window and set all values in GUI.
+        """
         file_path = tk.filedialog.askopenfilename(
             title="Select a file",
             filetypes=(("YAML Files", "*.yaml"), ("All files", "*.*"))
@@ -118,23 +132,30 @@ class GuiHandler:
             self.config_path = Path(file_path)
             self.update_config_entries_from_config_path()
 
-    def validate_all_entries(self):
-        def validate_float(value):
+    def are_all_entries_correct(self):
+        """
+        Validate all entries set by the user at once. Returns true if all values are correct and false if not.
+        """
+        # Function requires refactoring but works for now.
+        def is_float(value):
+            # Check if string value from entry can be cast to float. No regex needed.
             try:
                 float(value)
                 return True
             except ValueError:
                 return False
 
-        def validate_int(value):
+        def is_int(value):
+            # Check if string value from entry can be cast to an integer. No regex needed.
             try:
                 int(float(value))
                 return True
             except ValueError:
                 return False
 
-        def validate_float_greater_than_zero(value, name):
-            if validate_float(value):
+        def is_float_greater_than_zero(value, name):
+            # Check if function can be cast to float and is greater than zero and return useful error message if not.
+            if is_float(value):
                 if float(value) <= 0:
                     messagebox.showerror("Error", f"{name} must be greater than 0")
                     return False
@@ -143,8 +164,9 @@ class GuiHandler:
                 return False
             return True
 
-        def validate_int_greater_than_zero(value, name):
-            if validate_int(value):
+        def is_int_greater_than_zero(value, name):
+            # Check if function can be cast to integer and is greater than zero and return useful error message if not.
+            if is_int(value):
                 if int(float(value)) <= 0:
                     messagebox.showerror("Error", f"{name} must be greater than 0")
                     return False
@@ -153,35 +175,43 @@ class GuiHandler:
                 return False
             return True
 
-        if not validate_int_greater_than_zero(self.t_max_entry.get(), 'Simulation Time'): return False
-        if not validate_int_greater_than_zero(self.tick_speed_entry.get(), 'Tick speed'): return False
-        if not validate_int_greater_than_zero(self.nodes_per_axis_entry.get(), 'Number of cells per row'): return False
-        if not validate_int_greater_than_zero(self.axis_length_entry.get(), 'Width of map'): return False
-        if not validate_float_greater_than_zero(self.probability_entry.get(), 'probability'): return False
-        if not validate_float(self.wind_speed_x_entry.get()):
+        if not is_int_greater_than_zero(self.t_max_entry.get(), 'Simulation Time'): return False
+        if not is_int_greater_than_zero(self.tick_speed_entry.get(), 'Tick speed'): return False
+        if not is_int_greater_than_zero(self.nodes_per_axis_entry.get(), 'Number of cells per row'): return False
+        if not is_int_greater_than_zero(self.axis_length_entry.get(), 'Width of map'): return False
+        if not is_float_greater_than_zero(self.probability_entry.get(), 'probability'): return False
+
+        if not is_float(self.wind_speed_x_entry.get()):
             messagebox.showerror("Error", "wind_speed_x is invalid. Make sure it can be cast to float.")
             return False
-        if not validate_float(self.wind_speed_y_entry.get()):
+
+        if not is_float(self.wind_speed_y_entry.get()):
             messagebox.showerror("Error", "wind_speed_y is invalid. Make sure it can be cast to float.")
             return False
+
         if len(self.fire_starting_position_entry.get().split(';')) != 2:
             messagebox.showerror("Error", "Fire starting position is invalid. Make sure you have two values, that are separated by a semicolon ';'.")
             return False
 
         for position in self.fire_starting_position_entry.get().split(';'):
-            if not validate_int_greater_than_zero(position, 'fire_starting_position'): return False
+            if not is_int_greater_than_zero(position, 'fire_starting_position'): return False
             if int(float(position)) > int(float(self.axis_length_entry.get())):
                 messagebox.showerror("Error", f"Fire starting position {position} cannot be greater than axis length. This data is given in meter.")
                 return False
 
+        height_entries = self.get_height_entries()
+        if len(height_entries) < 2:
+            messagebox.showerror("Error", "Atleast two height entries are needed.")
+            return False
         for heights in self.get_height_entries():
             for value in heights:
-                if not validate_float_greater_than_zero(value, 'height value'): return False
+                if not is_float_greater_than_zero(value, 'height value'): return False
             for position in [heights[0], heights[1]]:
                 if float(position) >= float(self.axis_length_entry.get()):
                     messagebox.showerror("Error",f"Height position {position} cannot be greater than axis length. This data is given in meter.")
                     return False
 
+        # All values are valid
         return True
 
     def slider_changed(self, event):
@@ -189,6 +219,9 @@ class GuiHandler:
         self.tick_speed = int(self.slider.get())
 
     def plot(self):
+        """
+        Plot the timeline of the simulation.
+        """
         self.ax.clear()
         x = self.timeline[0,:]
         self.ax.set_ylabel("number of cells [1]")
@@ -203,11 +236,17 @@ class GuiHandler:
         self.canvas_plot.draw()
 
     def plot_position(self):
+        """
+        Plot the current step in the timeline plot.
+        """
         self.ax.lines[len(self.ax.lines) -1].remove()
         self.ax.axvline(x=self.current_step,color='black',linestyle='--')
         self.canvas_plot.draw()
 
     def select_file(self):
+        """
+        Select a file in a filedialog and set the path as value self.path_entry if it is valid.
+        """
         file_path = tk.filedialog.askopenfilename(
             title="Select a file",
             filetypes=(("PNG Files", "*.png"), ("All files", "*.*"))
@@ -217,7 +256,10 @@ class GuiHandler:
             self.path_entry.insert(0, file_path)
 
     def run_calculation(self):
-        if not self.validate_all_entries(): return
+        """
+        Run the whole calculation of the simulation and update the visualization in the Post-Processing tab.
+        """
+        if not self.are_all_entries_correct(): return
         self.read_config_variables_to_class_entries()
         forest_map = get_forest_map(map_path=self.map_picture_path, nodes_per_axis=self.nodes_per_axis, axis_length=self.axis_length, heights=self.heights)
         prob_crown, prob_ground = calculate_probability()
@@ -270,12 +312,10 @@ class GuiHandler:
         self.plot()
         simplified_visualize_fire(np.transpose(self.forest_map_simplified[:, :, 0]), self.canvas_automat)
 
-    def load_post_pros(self):
-        # TODO: tbi
-        print("platzhalter")
-
-    ### button functions
     def next_button(self):
+        """
+        Function for the next button. Steps the visualization one step forward if possible.
+        """
         if self.current_step == self.t_max :
             log("Last step reached")
         else:
@@ -285,6 +325,9 @@ class GuiHandler:
             self.plot_position()
 
     def previous_button(self):
+        """
+        Function for the previous button. Steps the visualization one step back if possible.
+        """
         if self.current_step >=1:
             render_optimised_backward(self.optimised_matrix[self.current_step-1], self.canvas_automat, self.cell_width, self.cell_height)
             self.current_step -= 1
@@ -294,18 +337,27 @@ class GuiHandler:
             log("First step reached")
 
     def first_button(self):
+        """
+        Function for the first button. Skips the visualization to the first step of the simulation.
+        """
         self.current_step = 0
         log("Step: " + str(self.current_step))
         simplified_visualize_fire(np.transpose(self.forest_map_simplified[:,:,self.current_step]), self.canvas_automat)
         self.plot_position()
 
     def last_button(self):
+        """
+        Function for the last button. Skips the visualization to the last step of the simulation.
+        """
         self.current_step = self.t_max
         log("Step: " + str(self.current_step))
         simplified_visualize_fire(np.transpose(self.forest_map_simplified[:,:,self.current_step]), self.canvas_automat)
         self.plot_position()
 
     def play_button(self):
+        """
+        Function for the play animation button. Runs the simulation animation if it is not at the end.
+        """
         if self.playing:
             self.playing = False
             self.b3.config(text="▶")
@@ -315,6 +367,9 @@ class GuiHandler:
             self.run_animation()
 
     def run_animation(self):
+        """
+        Run the animation of the simulation.
+        """
         if self.playing:
             if self.current_step == self.t_max:
                 self.playing = False
@@ -327,6 +382,9 @@ class GuiHandler:
                 self.root.after(self.tick_speed, lambda: self.run_animation())
 
     def add_height_entry(self):
+        """
+        Add height entry and add it as the last element in the grid
+        """
         entry = HeightEntry(self.heights_frame, self.remove_height_entry)
         i_new_entry = len(self.height_entries)
         i_row = i_new_entry // self.max_height_entries_per_row
@@ -335,8 +393,12 @@ class GuiHandler:
         self.height_entries.append(entry)
 
     def remove_height_entry(self, entry):
-        if len(self.height_entries) == 1:
-            messagebox.showinfo("Information", "Failed to remove last entry. At least one entry is needed.")
+        """
+        Remove a height entry element from GUI and rearrange all other elements in the grid
+        """
+        # Atleast two datapoints are needed
+        if len(self.height_entries) == 2:
+            messagebox.showinfo("Information", "Failed to remove last entry. At least two entries are needed.")
             return
 
         # Destroy and remove entry
@@ -353,15 +415,24 @@ class GuiHandler:
             i_entry+=1
 
     def get_height_entries(self):
+        """
+        Get height datasets from GUI as a list of list[x,y,height].
+        """
         return [[entry.x_entry.get(), entry.y_entry.get(), entry.h_entry.get()] for entry in self.height_entries]
 
     def show_forest_map_preview(self):
-        if not self.validate_all_entries(): return
+        """ Show a preview of the forest map height interpolation."""
+        # Utilize the show_height_graph functionality in get_forest_map to plot the heights
+        if not self.are_all_entries_correct(): return
         self.read_config_variables_to_class_entries()
+
         get_forest_map(map_path=self.map_picture_path, nodes_per_axis=self.nodes_per_axis,
                        axis_length=self.axis_length, heights=self.heights, show_height_graph=True)
     
     def __init__(self):
+        """
+        Initiate the whole GUI.
+        """
         # Variables
         self.timeline = None
         self.forest_map_simplified = None
@@ -463,6 +534,7 @@ class GuiHandler:
         self.prog_label = tk.Label(tab_preprocessing, text="")
         self.prog_label.grid(row=11, column=1, columnspan=3, padx=10, pady=10)
 
+        # Heights tab
         self.height_entries = []
         self.add_height_entry_button = tk.Button(self.tab_height, text="Add height entry", command=self.add_height_entry)
         self.add_height_entry_button.pack()

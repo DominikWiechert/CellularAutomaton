@@ -11,10 +11,6 @@ from custom_datatypes import MapNode, LandUse
 def get_forest_map(map_path: Path = None, nodes_per_axis: int = 200, axis_length: float = None, heights: list[list[float]] = [[1,1,1]], show_height_graph: bool = False) -> List[List[MapNode]]:
     """
     Return a 2D forest map of a given map picture.
-    :param show_height_graph:
-    :param axis_length:
-    :param map_path:
-    :param nodes_per_axis:
     :return: 2D array
         forest_map[x][y]
                x (width)
@@ -94,6 +90,10 @@ def get_forest_map(map_path: Path = None, nodes_per_axis: int = 200, axis_length
     return output_grid
 
 def get_forest_color_luv() -> List[int]:
+    """
+    Get the reference color of a forest.
+    :return: List[l, u, v]
+    """
     forest_image_path = Path().cwd() / 'map_pictures' / 'only_forest.png'
 
     forest_image = cv2.imread(str(forest_image_path))
