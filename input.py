@@ -1,13 +1,12 @@
 import math
 from typing import List
-
 from matplotlib import pyplot as plt
-
-from custom_datatypes import MapNode, LandUse
 from pathlib import Path
 import cv2
 import numpy as np
 from pykrige.ok import OrdinaryKriging
+
+from custom_datatypes import MapNode, LandUse
 
 def get_forest_map(map_path: Path = None, nodes_per_axis: int = 200, axis_length: float = None, heights: list[list[float]] = [[1,1,1]], show_height_graph: bool = False) -> List[List[MapNode]]:
     """
@@ -48,10 +47,10 @@ def get_forest_map(map_path: Path = None, nodes_per_axis: int = 200, axis_length
     data_heights = np.array([float(dataset[2]) for dataset in heights])
 
     # Grid for interpolation
-    grid_x = np.arange(0, n_nodes_width*cell_size, 1, dtype=float)
-    grid_y = np.arange(0, n_nodes_height*cell_size, 1, dtype=float)
+    grid_x = np.arange(0, n_nodes_height*cell_size, 1, dtype=float)
+    grid_y = np.arange(0, n_nodes_width*cell_size, 1, dtype=float)
 
-    # Ordinary Kriging
+    # Initiate Ordinary Kriging object
     OK = OrdinaryKriging(
         data_heights_x,
         data_heights_y,
@@ -60,18 +59,20 @@ def get_forest_map(map_path: Path = None, nodes_per_axis: int = 200, axis_length
         verbose=False,
         enable_plotting=False
     )
-
-    # Interpolation
-    interpolated_heights, ss = OK.execute('grid', grid_x, grid_y)
+    # Execute interpolation
+    interpolated_heights, _ = OK.execute('grid', grid_x, grid_y)
 
     if show_height_graph:
         plt.figure(figsize=(6, 5))
-        plt.contourf(grid_y, -grid_x, interpolated_heights, cmap='viridis')
-        plt.scatter(data_heights_y, -data_heights_x, c=data_heights, edgecolor='k', cmap='viridis')
+        # Coordinate system is flipped by 90 degrees (clockwise)
+        # x and y values are changed and y-axis is getting inverted.
+        plt.contourf(grid_y, grid_x, interpolated_heights, cmap='viridis')
+        plt.scatter(data_heights_y, data_heights_x, c=data_heights, edgecolor='k', cmap='viridis')
         plt.colorbar(label='Interpolated Heights [m]')
         plt.title("Interpolated Heights")
         plt.xlabel("y")
         plt.ylabel("x")
+        plt.gca().invert_yaxis()
         plt.show()
 
     output_grid = []
