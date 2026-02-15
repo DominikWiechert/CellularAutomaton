@@ -200,8 +200,8 @@ class GuiHandler:
                 return False
 
         height_entries = self.get_height_entries()
-        if len(height_entries) < 2:
-            messagebox.showerror("Error", "Atleast two height entries are needed.")
+        if len(height_entries) < 1:
+            messagebox.showerror("Error", "At least one height entry is needed.")
             return False
         for heights in self.get_height_entries():
             for value in heights:
@@ -396,9 +396,9 @@ class GuiHandler:
         """
         Remove a height entry element from GUI and rearrange all other elements in the grid
         """
-        # At least two datapoints are needed
-        if len(self.height_entries) == 2:
-            messagebox.showinfo("Information", "Failed to remove last entry. At least two entries are needed.")
+        # At least one datapoints is needed
+        if len(self.height_entries) == 1:
+            messagebox.showinfo("Information", "Failed to remove last entry. At least one entry are needed.")
             return
 
         # Destroy and remove entry

@@ -59,16 +59,25 @@ def get_forest_map(map_path: Path = None, nodes_per_axis: int = 200, axis_length
     interpolated_heights, _ = OK.execute('grid', grid_x, grid_y)
 
     if show_height_graph:
-        plt.figure(figsize=(6, 5))
-        # Coordinate system is flipped by 90 degrees (clockwise)
-        # x and y values are changed and y-axis is getting inverted.
-        plt.contourf(grid_y, grid_x, interpolated_heights, cmap='viridis')
-        plt.scatter(data_heights_y, data_heights_x, c=data_heights, edgecolor='k', cmap='viridis')
-        plt.colorbar(label='Interpolated Heights [m]')
-        plt.title("Interpolated Heights")
-        plt.xlabel("y")
-        plt.ylabel("x")
-        plt.gca().invert_yaxis()
+        # Both plots need to be twisted 90 degrees clockwise. Behaviour is different for scatter data points and
+        # contour plots, so they are split into subplots
+        fig, ax = plt.subplots(1, 2, figsize=(12, 5))
+        ax[0].scatter(data_heights_y, data_heights_x, c=data_heights)
+        ax[0].set_title("User Inputs")
+        ax[0].set_xlabel("y")
+        ax[0].set_ylabel("x")
+        ax[0].set_xlim(0, len(grid_y))
+        ax[0].set_ylim(0, len(grid_x))
+        ax[0].invert_yaxis()
+
+        contourf = ax[1].contourf(grid_y, grid_x, np.rot90(interpolated_heights, 1))
+        fig.colorbar(contourf, label='Interpolated Heights [m]')
+        ax[1].set_title("Interpolated Heights")
+        ax[1].set_xlabel("y")
+        ax[1].set_ylabel("x")
+        ticks = ax[1].get_yticks()
+        ax[1].set_yticks(ticks)
+        ax[1].set_yticklabels([f"{len(grid_y) - t}" for t in ticks])
         plt.show()
 
     output_grid = []
