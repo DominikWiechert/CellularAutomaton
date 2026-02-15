@@ -6,7 +6,7 @@ heights:
 - - '100'
   - '100'
   - '100'
-- - '150'
+- - '120'
   - '248'
   - '60'
 
@@ -16,4 +16,4 @@ probability: 30.0
 t_max: 200
 tick_speed: 400.0
 wind_speed_x: 0.0
-wind_speed_y: 80.0
+wind_speed_y: 90.0

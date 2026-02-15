@@ -6,14 +6,23 @@ heights:
 - - '100'
   - '100'
   - '100'
-- - '150'
+- - '250'
   - '248'
   - '60'
+- - '1000'
+  - '1000'
+  - '400'
+- - '50'
+  - '1500'
+  - '20'
+- - '1700'
+  - '1800'
+  - '500'
 
 nodes_per_axis: 100.0
 path: map_pictures/osm_map.png
-probability: 30.0
+probability: 20.0
 t_max: 200
 tick_speed: 400.0
 wind_speed_x: 0.0
-wind_speed_y: 80.0
+wind_speed_y: 00.0
