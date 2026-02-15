@@ -114,9 +114,9 @@ class GuiHandler:
         self.tick_speed = int(float(self.tick_speed_entry.get()))
         self.nodes_per_axis = int(float(self.nodes_per_axis_entry.get()))
         self.axis_length = int(float(self.axis_length_entry.get()))
-        self.probability = self.probability_entry.get()
-        self.wind_speed_x = self.wind_speed_x_entry.get()
-        self.wind_speed_y = self.wind_speed_y_entry.get()
+        self.probability = float(self.probability_entry.get())
+        self.wind_speed_x = float(self.wind_speed_x_entry.get())
+        self.wind_speed_y = float(self.wind_speed_y_entry.get())
         self.fire_starting_position = [int(x) for x in self.fire_starting_position_entry.get().split(';')]
         self.heights = self.get_height_entries()
 
@@ -265,7 +265,7 @@ class GuiHandler:
         if not self.are_all_entries_correct(): return
         self.read_config_variables_to_class_entries()
         forest_map = get_forest_map(map_path=self.map_picture_path, nodes_per_axis=self.nodes_per_axis, axis_length=self.axis_length, heights=self.heights)
-        prob_crown, prob_ground = calculate_probability()
+        prob_crown, prob_ground = calculate_probability(dryness_factor=self.probability, wind_x=self.wind_speed_x, wind_y=self.wind_speed_y)
 
         cell_size = self.axis_length / self.nodes_per_axis
         fire_start_x = int(self.fire_starting_position[0] / cell_size) - 1

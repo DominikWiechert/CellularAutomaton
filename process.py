@@ -14,31 +14,16 @@ def log(msg):
     if DEBUG == True:
         print(f'\033[92m **',msg,f'**\033[0m')
 
-def calculate_probability():
+def calculate_probability(dryness_factor: float, wind_x: float, wind_y: float):
     """
     Calculates global fire propagation probability for each cardinal direction.
     """
     wind_v_max = 100 #Can be edited to make simulation more precise
-    if os.path.isfile("config.yaml"):
-        with open("config.yaml", 'r') as file:
-            config = yaml.safe_load(file)
-        log("Probability config loaded")
-    else:
-        config = {
-            "probability": 30,
-            "wind_speed_x": -80,
-            "wind_speed_y": -30
-        }
-        with open("config.yaml", 'w') as file:
-            yaml.dump(config, file,default_flow_style=False)
-        log("Probability config not existing")
-        log("Standard probability config file created")
-    probability = Probability(config["probability"])
-
-    probability.north = probability.base * (1 + config["wind_speed_x"]/wind_v_max)
-    probability.south = probability.base * (1 - config["wind_speed_x"]/wind_v_max)
-    probability.west = probability.base * (1 + config["wind_speed_y"]/wind_v_max)
-    probability.east = probability.base * (1 - config["wind_speed_y"]/wind_v_max)
+    probability = Probability(dryness_factor)
+    probability.north = probability.base * (1 + wind_x/wind_v_max)
+    probability.south = probability.base * (1 - wind_x/wind_v_max)
+    probability.west = probability.base * (1 + wind_y/wind_v_max)
+    probability.east = probability.base * (1 - wind_y/wind_v_max)
 
     log("Probability calculated")
     log("Spread prob. east: " + str(probability.east))
@@ -47,7 +32,7 @@ def calculate_probability():
     log("Spread prob. south: " + str(probability.south))
 
     prob_ground = probability.base*0.6  #The factor 0.6 is based on observation of Wildfires. Can be changed later on to adapt model to real world wildfires.
-    return probability,prob_ground
+    return probability, prob_ground
 
 def calc_incl(h_local,h_neighbor,abst):
     """
