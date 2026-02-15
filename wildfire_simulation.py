@@ -215,6 +215,9 @@ class GuiHandler:
         return True
 
     def slider_changed(self, event):
+        """
+        Changes tick_speed if slider is moved. tick_speed is the length of the pause between each step.
+        """
         self.slider_label.config(text = f'tick speed = {int(self.slider.get()):04} ms')
         self.tick_speed = int(self.slider.get())
 
@@ -271,12 +274,14 @@ class GuiHandler:
 
         precent_step = 50 / self.t_max
 
+        #Initialises result variables forest_map_simplified and timeline
         self.forest_map_simplified = np.empty([len(forest_map), len(forest_map[0]), self.t_max + 1], dtype="S10")
         self.timeline = np.zeros([7, self.t_max + 1])
-
         self.forest_map_simplified[:, :, 0] = simplify_forest_map(forest_map)
         self.timeline[0, 0] = 0
         self.timeline[1:7, 0] = count_cells(self.forest_map_simplified[:, :, 0])[:, 0]
+
+        #For each step creates a new forest_map which is simplified and saved in forest_map_simplified.
         for t in range(1, self.t_max + 1):
             log("Step: " + str(t))
             self.prog_label.config(text=f"Simulating {t}/{self.t_max}")
@@ -289,6 +294,7 @@ class GuiHandler:
             self.root.update_idletasks()
             self.root.update()
 
+        #Extracts changes between steps. Saves it in optimised_matrix. Used in visualisation.
         for i in range(self.t_max):
             self.optimised_matrix.append(optimised_render(self.forest_map_simplified[:, :, i], self.forest_map_simplified[:, :, i + 1]))
             self.pbar['value'] += precent_step
@@ -310,7 +316,7 @@ class GuiHandler:
 
         self.canvas_plot.get_tk_widget().grid(row=0, column=21, columnspan=10, sticky='e')
         self.plot()
-        simplified_visualize_fire(np.transpose(self.forest_map_simplified[:, :, 0]), self.canvas_automat)
+        simplified_visualize_fire(np.transpose(self.forest_map_simplified[:, :, 0]), self.canvas_automat) #visualises initial step of map
 
     def next_button(self):
         """
