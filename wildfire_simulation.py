@@ -396,7 +396,7 @@ class GuiHandler:
         """
         Remove a height entry element from GUI and rearrange all other elements in the grid
         """
-        # Atleast two datapoints are needed
+        # At least two datapoints are needed
         if len(self.height_entries) == 2:
             messagebox.showinfo("Information", "Failed to remove last entry. At least two entries are needed.")
             return
