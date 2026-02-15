@@ -472,7 +472,7 @@ class GuiHandler:
 
         self.notebook.add(tab_preprocessing, text="Pre-Processing")
         self.notebook.add(self.tab_height, text="Heights")
-        self.notebook.add(self.tab_post, text="Processing")
+        self.notebook.add(self.tab_post, text="Post-Processing")
         self.notebook.pack(expand=1, fill='both')
 
         # Preprocessing tab

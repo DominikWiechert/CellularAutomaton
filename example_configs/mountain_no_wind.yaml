@@ -1,7 +1,7 @@
 axis_length: 2000.0
 fire_starting_position:
-- '100'
-- '100'
+- '1000'
+- '1000'
 heights:
 - - '100'
   - '100'
@@ -21,8 +21,9 @@ heights:
 
 nodes_per_axis: 100.0
 path: map_pictures/osm_map.png
-probability: 20.0
-t_max: 200
+probability: 30.0
+t_max: 50
 tick_speed: 400.0
 wind_speed_x: 0.0
-wind_speed_y: 00.0
+wind_speed_y: 0.0
+

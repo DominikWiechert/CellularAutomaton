@@ -29,7 +29,7 @@ heights:
   - '350'
 nodes_per_axis: 100.0
 path: map_pictures/forest_near_goslar.png
-probability: 60.0
+probability: 30.0
 t_max: 80
 tick_speed: 400
 wind_speed_x: 0.0
