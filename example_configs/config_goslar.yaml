@@ -1,0 +1,36 @@
+axis_length: 3000.0
+fire_starting_position:
+- '100'
+- '100'
+heights:
+- - '50'
+  - '150'
+  - '391'
+- - '50'
+  - '2900'
+  - '459'
+- - '800'
+  - '1700'
+  - '387'
+- - '1600'
+  - '1600'
+  - '436'
+- - '2300'
+  - '500'
+  - '482'
+- - '2250'
+  - '1200'
+  - '473'
+- - '2250'
+  - '2850'
+  - '500'
+- - '1000'
+  - '700'
+  - '350'
+nodes_per_axis: 100.0
+path: C:/Users/domin/PycharmProjects/CellularAutomaton/map_pictures/forest_near_goslar.png
+probability: 60.0
+t_max: 80
+tick_speed: 400
+wind_speed_x: 0.0
+wind_speed_y: 0.0
